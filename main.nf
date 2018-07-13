@@ -23,29 +23,19 @@ vim: syntax=groovy
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-// CHANGE NAME TO BABS-ATACSeqPE
-// PARSE FLAGSTAT AND CREATE BETTER PLOTS THAN MULTIQC
 // CUSTOMISE MULTIQC
-// ATAQV
+// PARSE FLAGSTAT AND CREATE BETTER PLOTS THAN MULTIQC
 // WRITE SCRIPT TO CHECK DESIGN FILE?
 // MAKE REGIONS FILE WITH MITOCHONDRIAL TO REMOVE BLACKLISTED ETC...USE BEDTOOLS TO CREATE FILE FOR FILTERING
-// CHANGE EXECUTOR SCOPE TO INCLUDE MEM-PER-CPU FOR JOBS SUBMITTED TO SLURM
-// PHYSICALLY CHANGE NAME FOR RAW READ FASTQ FILES BECAUSE THEY ARE READ IN AS ORIGINIAL IN MULTIQC
-
-
-
+// TEST LINE BREAKS IN SCRIPT SECTIONS AND WHEN DEFINING CHANNELS
+// REMOVE PARAMS.CONTAINER AND OTHER UNUSED VARIABLES....
+// ADD ADDITIONAL REPORTING SCRIPTS SIMILAR TO THE ONES IN NGI-RNASEQ
+// RECHECK FORMATTING OF SECTIONS
+// ATAQV
 
 // https://github.com/NCBI-Hackathons/ATACFlow
+    // macs2 callpeak -n ${name} --nomodel --format BAMPE -t ${sorted_bam} --shift -100 --extsize 200 -B --broad --outdir ${name}
 // DAStk: https://pypi.org/project/DAStk/
-          // macs2 callpeak -n ${name} \
-          //      --nomodel \
-          //      --format BAMPE \
-          //      -t ${sorted_bam} \
-          //      --shift -100 \
-          //      --extsize 200 \
-          //      -B \
-          //      --broad \
-          //      --outdir ${name}
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -308,12 +298,10 @@ process raw_fastqc {
 
     script:
         """
-        fastqc --outdir ./ --threads ${task.cpus} ${fastq_1}
-        fastqc --outdir ./ --threads ${task.cpus} ${fastq_2}
-        mv ${fastq_1.toString().replace(".fastq.gz","")}_fastqc.html  ${sampleid}_1_fastqc.html
-        mv ${fastq_1.toString().replace(".fastq.gz","")}_fastqc.zip  ${sampleid}_1_fastqc.zip
-        mv ${fastq_2.toString().replace(".fastq.gz","")}_fastqc.html  ${sampleid}_2_fastqc.html
-        mv ${fastq_2.toString().replace(".fastq.gz","")}_fastqc.zip  ${sampleid}_2_fastqc.zip
+        ln -s ${fastq_1} ${sampleid}_1.fastq.gz
+        ln -s ${fastq_2} ${sampleid}_2.fastq.gz
+        fastqc --outdir ./ --threads ${task.cpus} ${sampleid}_1.fastq.gz
+        fastqc --outdir ./ --threads ${task.cpus} ${sampleid}_2.fastq.gz
         """
 }
 
@@ -338,12 +326,10 @@ process raw_fastqscreen {
 
     script:
         """
-        fastq_screen --outdir ./ --subset 200000 --aligner bowtie2 --conf ${fastqscreen_config} --threads ${task.cpus} ${fastq_1}
-        fastq_screen --outdir ./ --subset 200000 --aligner bowtie2 --conf ${fastqscreen_config} --threads ${task.cpus} ${fastq_2}
-        mv ${fastq_1.toString().replace(".fastq.gz","")}_screen.html  ${sampleid}_1_screen.html
-        mv ${fastq_1.toString().replace(".fastq.gz","")}_screen.txt  ${sampleid}_1_screen.txt
-        mv ${fastq_2.toString().replace(".fastq.gz","")}_screen.html  ${sampleid}_2_screen.html
-        mv ${fastq_2.toString().replace(".fastq.gz","")}_screen.txt  ${sampleid}_2_screen.txt
+        ln -s ${fastq_1} ${sampleid}_1.fastq.gz
+        ln -s ${fastq_2} ${sampleid}_2.fastq.gz
+        fastq_screen --outdir ./ --subset 200000 --aligner bowtie2 --conf ${fastqscreen_config} --threads ${task.cpus} ${sampleid}_1.fastq.gz
+        fastq_screen --outdir ./ --subset 200000 --aligner bowtie2 --conf ${fastqscreen_config} --threads ${task.cpus} ${sampleid}_2.fastq.gz
         """
 }
 
@@ -2137,7 +2123,6 @@ process igv_session {
 ///////////////////////////////////////////////////////////////////////////////
 
 // BamTools stats for MultiQC
-// Is CollectMultipleMetrics compatible with MultiQC?
 
 // -m custom_content
 // /camp/stp/babs/working/patelh/code/nextflow/atacSeqPE/results/qc/multiqc/
