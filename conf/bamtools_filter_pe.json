@@ -1,0 +1,18 @@
+{
+    "filters" : [
+        { "id" : "insert",
+          "insertSize" : "<=2000"
+        },
+
+        { "id" : "mismatch",
+          "tag" : "NM:<=3"
+        },
+
+        { "id" : "cigar",
+          "cigar" : "*S*"
+        }
+    ],
+
+    "rule" : " insert & mismatch & !cigar "
+
+}

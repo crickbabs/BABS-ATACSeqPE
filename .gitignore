@@ -1,0 +1,6 @@
+.nextflow*
+work/
+results/
+dag/
+*.sh
+*.pyc
