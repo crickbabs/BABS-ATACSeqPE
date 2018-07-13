@@ -32,6 +32,9 @@ vim: syntax=groovy
 // CHANGE EXECUTOR SCOPE TO INCLUDE MEM-PER-CPU FOR JOBS SUBMITTED TO SLURM
 // PHYSICALLY CHANGE NAME FOR RAW READ FASTQ FILES BECAUSE THEY ARE READ IN AS ORIGINIAL IN MULTIQC
 
+
+
+
 // https://github.com/NCBI-Hackathons/ATACFlow
 // DAStk: https://pypi.org/project/DAStk/
           // macs2 callpeak -n ${name} \
