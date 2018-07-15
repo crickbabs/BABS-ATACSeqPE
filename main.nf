@@ -32,6 +32,7 @@ vim: syntax=groovy
 // ADD ADDITIONAL REPORTING SCRIPTS SIMILAR TO THE ONES IN NGI-RNASEQ
 // RECHECK FORMATTING OF SECTIONS
 // ATAQV
+// PROVIDE DOCUMENTATION FOR EACH BAM FILE GENERATED THROUGHOUT THE PROCESS
 
 // https://github.com/NCBI-Hackathons/ATACFlow
     // macs2 callpeak -n ${name} --nomodel --format BAMPE -t ${sorted_bam} --shift -100 --extsize 200 -B --broad --outdir ${name}
@@ -454,6 +455,8 @@ process bwa_aln_r2 {
 process bwa_sampe {
 
     tag "$sampleid"
+
+    label "lowcpu"
 
     publishDir "${params.outdir}/align", mode: 'copy',
                 saveAs: {filename ->
