@@ -362,7 +362,9 @@ process cutadapt {
 
     script:
         """
-        cutadapt -a ${adapter_seq} -A ${adapter_seq} --minimum-length=25 --quality-cutoff=20 -o ${sampleid}_1.trim.fastq.gz -p ${sampleid}_2.trim.fastq.gz ${fastq_1} ${fastq_2} > ${sampleid}.cutadapt.log
+        ln -s ${fastq_1} ${sampleid}_1.fastq.gz
+        ln -s ${fastq_2} ${sampleid}_2.fastq.gz
+        cutadapt -a ${adapter_seq} -A ${adapter_seq} --minimum-length=25 --quality-cutoff=20 -o ${sampleid}_1.trim.fastq.gz -p ${sampleid}_2.trim.fastq.gz ${sampleid}_1.fastq.gz ${sampleid}_2.fastq.gz > ${sampleid}.cutadapt.log
         """
 }
 
