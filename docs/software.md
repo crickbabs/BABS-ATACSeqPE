@@ -19,7 +19,7 @@ To obtain the pipeline run the following command in a directory where you want t
 git clone https://github.com/crickbabs/BABS-ATACSeqPE
 ```
 
-The nextflow pipeline and associated config and executable files will appear in the BABS-ATACSeqPE directory. It can now be configured to run on a Linux system of your choice.
+The nextflow pipeline and associated config and executable files will appear in the `BABS-ATACSeqPE` directory. It can now be configured to run on a Linux system of your choice.
 
 ```bash
 cd BABS-ATACSeqPE

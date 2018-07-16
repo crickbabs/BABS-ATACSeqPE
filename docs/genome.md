@@ -18,7 +18,7 @@ The parameters can either be specified at the command-line when running the pipe
 nextflow run main.nf --design design.csv --fasta <FASTA_FILE> --gtf <GTF_FILE> --mito_name <MITO_NAME> --bwa_index <BWA_INDEX> --genome_mask <GENOME_MASK> --macs_genome_size <MACS_GENOME_SIZE> -profile babs_modules
 ```
 
-or listed within the [genomes.config](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/conf/genomes.config) file. If specified in the config file then you will only need to provide the shorthand name for the reference genome when running the pipeline e.g. `--genome hg19`.
+or custom paths can be specified within the [genomes.config](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/conf/genomes.config) file. If specified in the config file then you will only need to provide the shorthand name for the reference genome when running the pipeline e.g. `--genome hg19`.
 
 ```bash
 nextflow run main.nf --design design.csv --genome hg19 -profile babs_modules
