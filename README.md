@@ -19,23 +19,23 @@ The pipeline was written by [The Bioinformatics & Biostatistics Group](https://w
     * reads mapping to blacklisted regions ([SAMtools](https://sourceforge.net/projects/samtools/files/samtools/))
     * reads that are unmapped ([SAMtools](https://sourceforge.net/projects/samtools/files/samtools/))
     * reads that map to multiple locations ([SAMtools](https://sourceforge.net/projects/samtools/files/samtools/))
-    * reads that map to different chromosomes ([Pysam](http://pysam.readthedocs.io/en/latest/installation.html))
     * reads that arent marked as properly paired ([SAMtools](https://sourceforge.net/projects/samtools/files/samtools/))
     * reads that arent marked as primary alignments ([SAMtools](https://sourceforge.net/projects/samtools/files/samtools/))
     * reads containing > 3 mismatches in either read of the pair ([BAMTools](https://github.com/pezmaster31/bamtools))
     * reads that have an insert size > 2kb ([BAMTools](https://github.com/pezmaster31/bamtools))
     * reads that are soft-clipped ([BAMTools](https://github.com/pezmaster31/bamtools))
+    * reads that map to different chromosomes ([Pysam](http://pysam.readthedocs.io/en/latest/installation.html))
     * reads where only one read of the pair fails the above criteria ([Pysam](http://pysam.readthedocs.io/en/latest/installation.html))
 6. Merge alignments at replicate and sample level ([picard](https://broadinstitute.github.io/picard/))
     * Remove duplicate reads ([SAMtools](https://sourceforge.net/projects/samtools/files/samtools/))
-    * Create normalised bigwig files scaled to 1 million mapped read pairs ([BEDTools](https://github.com/arq5x/bedtools2/), [wigToBigWig](http://hgdownload.soe.ucsc.edu/admin/exe/))
+    * Create normalised bigWig files scaled to 1 million mapped read pairs ([BEDTools](https://github.com/arq5x/bedtools2/), [wigToBigWig](http://hgdownload.soe.ucsc.edu/admin/exe/))
     * Call peaks ([MACS2](https://github.com/taoliu/MACS))
-    * Annotate peaks ([HOMER](http://homer.ucsd.edu/homer/download.html))
+    * Annotate peaks relative to gene features ([HOMER](http://homer.ucsd.edu/homer/download.html))
     * Merge peaks across all samples and create tabular file to aid in the filtering of the data ([BEDTools](https://github.com/arq5x/bedtools2/))
     * Count reads in merged peaks at replicate level ([featureCounts](http://bioinf.wehi.edu.au/featureCounts/))
     * Differential binding analysis, PCA and clustering ([R](https://www.r-project.org/),[DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html))
 7. Create IGV session file containing bigWig tracks, peaks and differential sites for data visualisation ([IGV](https://software.broadinstitute.org/software/igv/)).
-8. Collect and present QC at the raw read, alignment and peak-level in a single report ([MultiQC](http://multiqc.info/),[R](https://www.r-project.org/))
+8. Collect and present QC at the raw read, alignment and peak-level ([MultiQC](http://multiqc.info/),[R](https://www.r-project.org/))
 
 ## Documentation
 
