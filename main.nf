@@ -18,29 +18,6 @@ vim: syntax=groovy
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 /* --                                                                     -- */
-/* --                             NOTES                                   -- */
-/* --                                                                     -- */
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-
-// CUSTOMISE MULTIQC
-// PARSE FLAGSTAT AND CREATE BETTER PLOTS THAN MULTIQC
-// WRITE SCRIPT TO CHECK DESIGN FILE?
-// MAKE REGIONS FILE WITH MITOCHONDRIAL TO REMOVE BLACKLISTED ETC...USE BEDTOOLS TO CREATE FILE FOR FILTERING
-// TEST LINE BREAKS IN SCRIPT SECTIONS AND WHEN DEFINING CHANNELS
-// REMOVE PARAMS.CONTAINER AND OTHER UNUSED VARIABLES....
-// ADD ADDITIONAL REPORTING SCRIPTS SIMILAR TO THE ONES IN NGI-RNASEQ
-// RECHECK FORMATTING OF SECTIONS
-// ATAQV
-// PROVIDE DOCUMENTATION FOR EACH BAM FILE GENERATED THROUGHOUT THE PROCESS
-
-// https://github.com/NCBI-Hackathons/ATACFlow
-    // macs2 callpeak -n ${name} --nomodel --format BAMPE -t ${sorted_bam} --shift -100 --extsize 200 -B --broad --outdir ${name}
-// DAStk: https://pypi.org/project/DAStk/
-
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-/* --                                                                     -- */
 /* --                             PARAMETERS                              -- */
 /* --                                                                     -- */
 ///////////////////////////////////////////////////////////////////////////////
@@ -491,7 +468,6 @@ process bwa_bam {
     publishDir "${params.outdir}/align", mode: 'copy',
                 saveAs: {filename ->
                             if (filename.endsWith(".flagstat")) "flagstat/$filename"
-                            else if (filename.endsWith(".idxstats")) "idxstats/$filename"
                             else null
                         }
 
@@ -510,7 +486,6 @@ process bwa_bam {
         samtools sort -@ ${task.cpus} -o ${out_prefix}.sorted.bam -T ${out_prefix} ${out_prefix}.bam
         samtools index ${out_prefix}.sorted.bam
         samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
-        samtools idxstats ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.idxstats
         """
 }
 
@@ -532,6 +507,7 @@ process markdup {
     publishDir "${params.outdir}/align", mode: 'copy',
                 saveAs: {filename ->
                             if (filename.endsWith(".flagstat")) "flagstat/$filename"
+                            else if (filename.endsWith(".idxstats")) "idxstats/$filename"
                             else if (filename.endsWith(".sysout")) "sysout/$filename"
                             else if (filename.endsWith(".metrics.txt")) "picard_metrics/$filename"
                             else null
@@ -552,6 +528,7 @@ process markdup {
         java -Xmx${task.memory.toString().split(" ")[0]}g -jar \${EBROOTPICARD}/picard.jar MarkDuplicates VALIDATION_STRINGENCY=LENIENT REMOVE_DUPLICATES=false ASSUME_SORTED=true INPUT=${bam[0]} OUTPUT=${out_prefix}.sorted.bam METRICS_FILE=${out_prefix}.MarkDuplicates.metrics.txt TMP_DIR=tmp >> ${out_prefix}.MarkDuplicates.sysout 2>&1
         samtools index ${out_prefix}.sorted.bam
         samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
+        samtools idxstats ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.idxstats
         """
 }
 
@@ -595,7 +572,6 @@ process filter_bam {
     publishDir "${params.outdir}/align", mode: 'copy',
                 saveAs: {filename ->
                             if (filename.endsWith(".flagstat")) "flagstat/$filename"
-                            else if (filename.endsWith(".idxstats")) "idxstats/$filename"
                             else null
                         }
 
@@ -621,7 +597,6 @@ process filter_bam {
         samtools view -f 0x001 -f 0x002 -F 0x004 -F 0x0008 -F 0x0100 -q 1 -L ${mito_bed} -b ${bam[0]} | bamtools filter -out ${out_prefix}.sorted.bam -script ${bamtools_filter_pe_config}
         samtools index ${out_prefix}.sorted.bam
         samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
-        samtools idxstats ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.idxstats
         samtools sort -n -@ ${task.cpus} -o ${out_prefix}.bam -T ${out_prefix} ${out_prefix}.sorted.bam
         """
 }
@@ -654,6 +629,7 @@ process  rm_orphan_sort_bam {
     publishDir "${params.outdir}/align", mode: 'copy',
                 saveAs: {filename ->
                             if (filename.endsWith(".flagstat")) "flagstat/$filename"
+                            else if (filename.endsWith(".idxstats")) "idxstats/$filename"
                             else if (filename.endsWith(".bam")) "$filename"
                             else if (filename.endsWith(".bai")) "$filename"
                         }
@@ -670,6 +646,7 @@ process  rm_orphan_sort_bam {
         samtools sort -@ ${task.cpus} -o ${out_prefix}.sorted.bam -T ${out_prefix} ${out_prefix}.bam
         samtools index ${out_prefix}.sorted.bam
         samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
+        samtools idxstats ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.idxstats
         """
 }
 
@@ -2117,7 +2094,6 @@ process igv_session {
         python $baseDir/bin/files_to_igv_session.py igv_session.xml igv_files.txt ${params.outdir_abspath}/genome/${fasta.getName()}
         """
 }
-// echo -e '${params.gtf}\t0,0,178' >> igv_files.txt
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -2126,14 +2102,6 @@ process igv_session {
 /* --                                                                     -- */
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
-// BamTools stats for MultiQC
-
-// -m custom_content
-// /camp/stp/babs/working/patelh/code/nextflow/atacSeqPE/results/qc/multiqc/
-// multiqc ${params.outdir_abspath} -f --config ${params.multiqc_config} --filename atacSeqPE_multiqc_report.html -m fastqc -m fastq_screen -m cutadapt -m samtools -m picard /camp/stp/babs/working/patelh/projects/caladod/rita.barbosa/2/analysis/cutadapt/sysout/*.trim_1.fastq_cutadapt.sysout
-
-// multiqc ./results -f --config conf/multiqc_config.yaml --filename atacSeqPE_multiqc_report.html -m fastqc -m fastq_screen -m cutadapt -m samtools -m picard
 
 // RUN THIS AFTER IGV BECAUSE ITS AT THE END OF THE PIPELINE
 process multiqc {
@@ -2154,64 +2122,10 @@ process multiqc {
         """
 }
 
-// ///////////////////////////////////////////////////////////////////////////////
-// ///////////////////////////////////////////////////////////////////////////////
-// /* --                                                                     -- */
-// /* --                        UNUSED PROCESSES                             -- */
-// /* --                                                                     -- */
-// ///////////////////////////////////////////////////////////////////////////////
-// ///////////////////////////////////////////////////////////////////////////////
-//
-// process merge_replicate_bam_to_bed {
-//
-//     tag "$sampleid"
-//
-//     input:
-//     set val(sampleid), file(bam) from merge_replicate_name_bam_ch
-//
-//     output:
-//     set val(sampleid), file("*.fragment.bed") into merge_replicate_bam_to_bed_ch
-//
-//     script:
-//         out_prefix="${sampleid}.mRp.rmD"
-//         """
-//         bamToBed -bedpe -i ${bam[0]} > ${out_prefix}.bed
-//         cut -f 1,2,6,7,8,9 ${out_prefix}.bed > ${out_prefix}.fragment.bed
-//         """
-// }
-
-// process merge_sample_bam_to_bed {
-//
-//     tag "$sampleid"
-//
-//     input:
-//     set val(sampleid), file(bam) from merge_sample_name_bam_ch
-//
-//     output:
-//     set val(sampleid), file("*.fragment.bed") into merge_sample_bam_to_bed_ch
-//
-//     script:
-//         out_prefix="${sampleid}.mSm.rmD"
-//         """
-//         bamToBed -bedpe -i ${bam[0]} > ${out_prefix}.bed
-//         cut -f 1,2,6,7,8,9 ${out_prefix}.bed > ${out_prefix}.fragment.bed
-//         """
-// }
-//
-// // SORT BAM FILE BY NAME
-// process merge_sample_name_bam {
-//
-//     tag "$sampleid"
-//
-//     input:
-//     set val(sampleid), file(bam) from merge_sample_rmdup_name_bam_ch
-//
-//     output:
-//     set val(sampleid), file("*.bam") into merge_sample_name_bam_ch
-//
-//     script:
-//         out_prefix="${sampleid}.mSm.rmD"
-//         """
-//         samtools sort -n -@ ${task.cpus} -o ${out_prefix}.bam -T ${out_prefix} ${out_prefix}.sorted.bam
-//         """
-// }
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/* --                                                                     -- */
+/* --                        END OF PIPELINE                              -- */
+/* --                                                                     -- */
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
