@@ -1,3 +1,4 @@
+# ![BABS-ATACSeqPE](https://raw.githubusercontent.com/crickbabs/BABS-ATACSeqPE/master/docs/images/BABS-ATACSeqPE_logo.png)
 
 # PIPELINE & DOCUMENTATION STILL UNDER CONSTRUCTION!  
 
