@@ -1,9 +1,6 @@
+# PIPELINE & DOCUMENTATION STILL UNDER CONSTRUCTION! ETA AUGUST 2018.   
 
 # ![BABS-ATACSeqPE](https://raw.githubusercontent.com/crickbabs/BABS-ATACSeqPE/master/docs/images/BABS-ATACSeqPE_logo.png)
-
-# PIPELINE & DOCUMENTATION STILL UNDER CONSTRUCTION!  
-
-**HOPING TO HAVE IT READY BY EARLY AUGUST 2018.**
 
 ## Introduction
 
