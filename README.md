@@ -61,6 +61,8 @@ The pipeline was developed by [Harshil Patel](mailto:harshil.patel@crick.ac.uk),
 
 The [NGI-RNAseq](https://github.com/SciLifeLab/NGI-RNAseq) pipeline developed by Phil Ewels was used a template for this pipeline. Many thanks to Phil and the team at SciLifeLab.
 
+# ![The Francis Crick Institute](https://raw.githubusercontent.com/crickbabs/BABS-ATACSeqPE/master/docs/images/The_Francis_Crick_Institute_logo.png)
+
 <!---
 Update dag plot
 
