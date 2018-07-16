@@ -157,7 +157,7 @@ if( params.design && file(params.design).exists() ){
       .fromPath(params.design)
       .splitCsv(header:true, sep:',')
       .map{ row -> [[row.sample,"R"+row.replicate,"L"+row.run].join("_"),row.sample,row.replicate,row.run,file(row.fastq_1),file(row.fastq_2)]}
-      .into {design_raw_fastqc_ch; design_raw_fastqscreen_ch; design_cutadapt_ch; design_groups_ch}
+      .into {design_raw_fastqc_ch; design_raw_fastqscreen_ch; design_cutadapt_ch}
 } else {
     exit 1, "Design file not found: ${params.design}"
 }
@@ -334,7 +334,7 @@ process cutadapt {
     set val(sampleid), val(sample), val(replicate), val(run), file(fastq_1), file(fastq_2) from design_cutadapt_ch
 
     output:
-    set val(sampleid), file('*.fastq.gz') into cutadapt_fastqc_ch,cutadapt_bwa_aln_r1_ch,cutadapt_bwa_aln_r2_ch,cutadapt_bwa_sai_to_sam_ch
+    set val(sampleid), file('*.trim.fastq.gz') into cutadapt_fastqc_ch,cutadapt_bwa_aln_r1_ch,cutadapt_bwa_aln_r2_ch,cutadapt_bwa_sai_to_sam_ch
     set val(sampleid), file('*.log') into cutadapt_log_ch
 
     script:
