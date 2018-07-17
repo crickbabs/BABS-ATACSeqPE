@@ -477,7 +477,6 @@ process bwa_bam {
     output:
     set val(sampleid), file("*.sorted.{bam,bam.bai}") into bwa_bam_ch
     set val(sampleid), file("*.flagstat") into bwa_bam_flagstat_ch
-    set val(sampleid), file("*.idxstats") into bwa_bam_idxstats_ch
 
     script:
         out_prefix="${sampleid}"
@@ -519,6 +518,7 @@ process markdup {
     output:
     set val(sampleid), file("*.{bam,bam.bai}") into markdup_filter_bam_ch, markdup_collectmetrics_in_ch
     set val(sampleid), file("*.flagstat") into markdup_flagstat_ch
+    set val(sampleid), file("*.idxstats") into markdup_idxstats_ch
     set val(sampleid), file("*.metrics.txt") into markdup_metrics_ch
     set val(sampleid), file("*.sysout") into markdup_sysout_ch
 
@@ -583,7 +583,6 @@ process filter_bam {
     set val(sampleid), file("*.mkD.clN.bam") into filter_bam_ch
     set val(sampleid), file("*.sorted.{bam,bam.bai}") into filter_bam_sort_ch
     set val(sampleid), file("*.flagstat") into filter_bam_flagstat_ch
-    set val(sampleid), file("*.idxstats") into filter_bam_idxstats_ch
 
     script:
         // 0x0001 = read paired
@@ -639,6 +638,7 @@ process  rm_orphan_sort_bam {
 
     output:
     set val(sampleid), file("*.{bam,bam.bai,flagstat}") into rm_orphan_sort_bam_replicate_ch, rm_orphan_sort_bam_sample_ch, rm_orphan_sort_bam_replicate_rmdup_ch, rm_orphan_sort_bam_sample_rmdup_ch
+    set val(sampleid), file("*.idxstats") into rm_orphan_sort_bam_idxstats_ch
 
     script:
         out_prefix="${sampleid}.mkD.flT"
