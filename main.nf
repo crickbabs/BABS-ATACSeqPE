@@ -5,13 +5,14 @@ vim: syntax=groovy
 ==============================================================================
     B A B S - A T A C S E Q  P A I R E D - E N D   B E S T    P R A C T I C E
 ==============================================================================
- ATACSeq Analysis Pipeline For Paired-End Illumina Samples. Started 11th May 2018.
+ ATACSeq Analysis Pipeline For Paired-End Illumina Samples.
+ Started 11th May 2018.
  #### Homepage / Documentation
- #### https://github.com/crickbabs/BABS-ATACSeqPE
+ https://github.com/crickbabs/BABS-ATACSeqPE
  #### Authors
- #### Harshil Patel <harshil.patel@crick.ac.uk>
- #### Philip East   <philip.east@crick.ac.uk>
- #### Nourdine Bah  <nourdine.bah@crick.ac.uk>
+ Harshil Patel <harshil.patel@crick.ac.uk>
+ Philip East   <philip.east@crick.ac.uk>
+ Nourdine Bah  <nourdine.bah@crick.ac.uk>
 -------------------------------------------------------------------------------
 */
 
@@ -25,9 +26,9 @@ vim: syntax=groovy
 
 def helpMessage() {
     log.info"""
-    =============================================
+    ======================================================
     BABS ATACSeq Paired-End Pipeline v${params.version}
-    =============================================
+    ======================================================
 
     Usage:
     The typical command for running the pipeline is as follows:
@@ -189,9 +190,9 @@ if( params.design && file(params.design).exists() ){
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-log.info "============================================="
+log.info "======================================================"
 log.info "BABS ATACSeq Paired-End Pipeline v${params.version}"
-log.info "============================================="
+log.info "======================================================"
 def summary = [:]
 summary['Run name']                   = custom_runName ?: workflow.runName
 summary['Design file']                = params.design
@@ -219,7 +220,7 @@ if(workflow.revision) summary['Pipeline release'] = workflow.revision
 if(params.project) summary['BABS project'] = params.project
 if(params.email) summary['E-mail address'] = params.email
 log.info summary.collect { k,v -> "${k.padRight(26)}: $v" }.join("\n")
-log.info "============================================="
+log.info "======================================================"
 
 // CHECK THAT NEXTFLOW VERSION IS UP TO DATE ENOUGH
 try {
