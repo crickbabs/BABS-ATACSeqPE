@@ -33,12 +33,12 @@ def helpMessage() {
     Usage:
     The typical command for running the pipeline is as follows:
 
-    nextflow run main.nf --design design.csv --genome hg19 -profile babs_modules
+    nextflow run main.nf --design design.csv --genome hg19 -profile babs
 
     Mandatory arguments:
       --design                      Comma separted file containing information about the samples (see README)
       --genome                      Genome shortname (e.g. hg19)
-      -profile                      Hardware config to use e.g. babs_modules
+      -profile                      Hardware config to use e.g. babs
 
     References:                     If not specified in the configuration file or you wish to overwrite any of the references
       --fasta                       Path to Fasta reference file containing all chromosomes/contigs
@@ -56,7 +56,6 @@ def helpMessage() {
       --outdir                      The output directory where the results will be saved (default: './results')
 
     Other options:
-      --email                       Set this parameter to your e-mail address to get a summary e-mail with details of the run sent to you when the workflow exits
       -name                         Name for the pipeline run. If not specified, Nextflow will automatically generate a random mnemonic.
     """.stripIndent()
 }
@@ -93,10 +92,8 @@ params.macs_genome_size = params.genome ? params.genomes[ params.genome ].macs_g
 params.adapter = false
 params.outdir = './results'
 params.outdir_abspath = new File(params.outdir).getCanonicalPath().toString()
-params.email = false
 params.name = false
 params.project = false
-// params.plaintext_email = false
 params.multiqc_config = "$baseDir/conf/multiqc_config.yaml"
 params.fastqscreen_config = "$baseDir/conf/fastq_screen.conf.txt"
 params.bamtools_filter_pe_config = "$baseDir/conf/bamtools_filter_pe.json"
@@ -218,7 +215,6 @@ summary['Config profile']             = workflow.profile
 summary['Container']                  = workflow.container
 if(workflow.revision) summary['Pipeline release'] = workflow.revision
 if(params.project) summary['BABS project'] = params.project
-if(params.email) summary['E-mail address'] = params.email
 log.info summary.collect { k,v -> "${k.padRight(26)}: $v" }.join("\n")
 log.info "======================================================"
 
