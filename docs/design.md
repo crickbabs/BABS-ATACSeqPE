@@ -5,11 +5,11 @@ You will need to create a design file with information about the samples in your
 
 ```bash
 sample,replicate,run,fastq_1,fastq_2
-control,1,1,control_R1_L1_1.fastq.gz,control_R1_L1_2.fastq.gz
-control,2,1,control_R2_L1_1.fastq.gz,control_R2_L1_2.fastq.gz
-treatment,1,1,treatment_R1_L1_1.fastq.gz,treatment_R1_L1_2.fastq.gz
-treatment,2,1,treatment_R2_L1_1.fastq.gz,treatment_R2_L1_2.fastq.gz
-treatment,2,2,treatment_R2_L2_1.fastq.gz,treatment_R2_L2_2.fastq.gz
+control,1,1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
+control,2,1,AEG588A2_S2_L002_R1_001.fastq.gz,AEG588A2_S2_L002_R2_001.fastq.gz
+treatment,1,1,AEG588A3_S5_L003_R1_001.fastq.gz,AEG588A3_S5_L003_R2_001.fastq.gz
+treatment,2,1,AEG588A4_S3_L002_R1_001.fastq.gz,AEG588A4_S3_L002_R2_001.fastq.gz
+treatment,2,2,AEG588A5_S4_L002_R1_001.fastq.gz,AEG588A5_S4_L002_R2_001.fastq.gz
 ```
 
 | Column      | Description                                                                                                                               |
@@ -17,5 +17,5 @@ treatment,2,2,treatment_R2_L2_1.fastq.gz,treatment_R2_L2_2.fastq.gz
 | `sample`    | Group identifier for sample                                                                                                               |
 | `replicate` | Integer representing replicate number                                                                                                     |
 | `run`       | Integer representing the number of times the same library has been sequenced. This will be used later for merging at the replicate-level. |
-| `fastq_1`   | Path to FastQ file for read 1. File has to be zipped and have the extension ".fastq.gz".                                                  |
-| `fastq_2`   | Path to FastQ file for read 2. File has to be zipped and have the extension ".fastq.gz".                                                  |
+| `fastq_1`   | Full path to FastQ file for read 1. File has to be zipped and have the extension ".fastq.gz".                                             |
+| `fastq_2`   | Full path to FastQ file for read 2. File has to be zipped and have the extension ".fastq.gz".                                             |
