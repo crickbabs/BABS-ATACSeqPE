@@ -131,7 +131,13 @@ fastqscreen_config = file(params.fastqscreen_config)
 if( params.fasta && file(params.fasta).exists() ){
     Channel
       .fromPath(params.fasta)
-      .into {fasta_index_ch; fasta_markdup_collectmetrics_ch; fasta_merge_replicate_macs2_homer_ch; fasta_merge_sample_macs2_homer_ch; fasta_merge_replicate_macs2_merge_peaks_homer_ch; fasta_merge_sample_macs2_merge_peaks_homer_ch; fasta_igv_ch}
+      .into { fasta_index_ch;
+              fasta_markdup_collectmetrics_ch;
+              fasta_merge_replicate_macs2_homer_ch;
+              fasta_merge_replicate_macs2_merge_peaks_homer_ch;
+              fasta_merge_sample_macs2_homer_ch;
+              fasta_merge_sample_macs2_merge_peaks_homer_ch;
+              fasta_igv_ch }
 } else {
     exit 1, "Genome fasta file not found: ${params.fasta}"
 }
@@ -139,7 +145,11 @@ if( params.fasta && file(params.fasta).exists() ){
 if( params.gtf && file(params.gtf).exists() ){
     Channel
       .fromPath(params.gtf)
-      .into { gtf_merge_replicate_macs2_homer_ch; gtf_merge_sample_macs2_homer_ch; gtf_merge_replicate_macs2_merge_peaks_homer_ch; gtf_merge_sample_macs2_merge_peaks_homer_ch; gtf_igv_ch }
+      .into { gtf_merge_replicate_macs2_homer_ch;
+              gtf_merge_replicate_macs2_merge_peaks_homer_ch;
+              gtf_merge_sample_macs2_homer_ch;
+              gtf_merge_sample_macs2_merge_peaks_homer_ch;
+              gtf_igv_ch }
 } else {
     exit 1, "GTF file not found: ${params.gtf}"
 }
@@ -147,7 +157,9 @@ if( params.gtf && file(params.gtf).exists() ){
 if( params.bwa_index && file("${params.bwa_index}.amb").exists() ) {
     Channel
         .fromPath("${params.bwa_index}*.{amb,ann,bwt,pac,sa}")
-        .into { bwa_index_bwa_aln_r1_ch; bwa_index_bwa_aln_r2_ch; bwa_index_bwa_sampe_ch }
+        .into { bwa_index_bwa_aln_r1_ch;
+                bwa_index_bwa_aln_r2_ch;
+                bwa_index_bwa_sampe_ch }
 }  else {
     exit 1, "BWA indices not found: ${params.bwa_index}"
 }
@@ -156,8 +168,15 @@ if( params.design && file(params.design).exists() ){
     Channel
       .fromPath(params.design)
       .splitCsv(header:true, sep:',')
-      .map{ row -> [[row.sample,"R"+row.replicate,"L"+row.run].join("_"),row.sample,row.replicate,row.run,file(row.fastq_1),file(row.fastq_2)]}
-      .into {design_raw_fastqc_ch; design_raw_fastqscreen_ch; design_cutadapt_ch}
+      .map { row -> [ [row.sample,"R"+row.replicate,"L"+row.run].join("_"),
+                       row.sample,
+                       row.replicate,
+                       row.run,
+                       file(row.fastq_1),
+                       file(row.fastq_2) ] }
+      .into { design_raw_fastqc_ch;
+              design_raw_fastqscreen_ch;
+              design_cutadapt_ch }
 } else {
     exit 1, "Design file not found: ${params.design}"
 }
@@ -237,7 +256,10 @@ process prep_genome {
 
     output:
     file "*.fai" into prep_genome_index_ch
-    file "*.sizes" into prep_genome_sizes_replicate_bedgraph_ch, prep_genome_sizes_sample_bedgraph_ch,prep_genome_sizes_replicate_bigwig_ch, prep_genome_sizes_sample_bigwig_ch
+    file "*.sizes" into prep_genome_sizes_replicate_bedgraph_ch,
+                        prep_genome_sizes_sample_bedgraph_ch,
+                        prep_genome_sizes_replicate_bigwig_ch,
+                        prep_genome_sizes_sample_bigwig_ch
     file "*.rmMito.bed" into prep_genome_bed_filter_bam_ch
 
     script:
@@ -344,7 +366,10 @@ process cutadapt {
     set val(sampleid), val(sample), val(replicate), val(run), file(fastq_1), file(fastq_2) from design_cutadapt_ch
 
     output:
-    set val(sampleid), file('*.trim.fastq.gz') into cutadapt_fastqc_ch,cutadapt_bwa_aln_r1_ch,cutadapt_bwa_aln_r2_ch,cutadapt_bwa_sai_to_sam_ch
+    set val(sampleid), file('*.trim.fastq.gz') into cutadapt_fastqc_ch,
+                                                    cutadapt_bwa_aln_r1_ch,
+                                                    cutadapt_bwa_aln_r2_ch,
+                                                    cutadapt_bwa_sai_to_sam_ch
     set val(sampleid), file('*.log') into cutadapt_log_ch
 
     script:
@@ -679,7 +704,10 @@ process  rm_orphan_sort_bam {
     set val(sampleid), file(filter_bam), file(orphan_bam) from filter_bam_sort_ch.join(rm_orphan_ch, by: [0])
 
     output:
-    set val(sampleid), file("*.{bam,bam.bai,flagstat}") into rm_orphan_sort_bam_replicate_ch, rm_orphan_sort_bam_sample_ch, rm_orphan_sort_bam_replicate_rmdup_ch, rm_orphan_sort_bam_sample_rmdup_ch
+    set val(sampleid), file("*.{bam,bam.bai,flagstat}") into rm_orphan_sort_bam_replicate_ch,
+                                                             rm_orphan_sort_bam_sample_ch,
+                                                             rm_orphan_sort_bam_replicate_rmdup_ch,
+                                                             rm_orphan_sort_bam_sample_rmdup_ch
     set val(sampleid), file("*.idxstats") into rm_orphan_sort_bam_idxstats_ch
 
     script:
@@ -701,10 +729,12 @@ process  rm_orphan_sort_bam {
 ///////////////////////////////////////////////////////////////////////////////
 
 // CREATE CHANNEL TO MERGE AT REPLICATE LEVEL
-rm_orphan_sort_bam_replicate_ch.map{ it -> [ it[0].toString().subSequence(0, it[0].length() - 3), it[1] ]}
-                               .groupTuple( by: [0] )
-                               .map{ it ->  [ it[0], it[1].flatten() ]}
-                               .into { rm_orphan_sort_bam_replicate_merge_ch; rm_orphan_sort_bam_replicate_markdup_ch; rm_orphan_sort_bam_replicate_rmdup_ch }
+rm_orphan_sort_bam_replicate_ch.map { it -> [ it[0].toString().subSequence(0, it[0].length() - 3), it[1] ] }
+                               .groupTuple(by: [0])
+                               .map { it ->  [ it[0], it[1].flatten() ] }
+                               .into { rm_orphan_sort_bam_replicate_merge_ch;
+                                       rm_orphan_sort_bam_replicate_markdup_ch;
+                                       rm_orphan_sort_bam_replicate_rmdup_ch }
 
 // MERGE FILTERED BAM FILES AT REPLICATE LEVEL USING PICARD MERGESAMFILES
 process merge_replicate {
@@ -823,8 +853,13 @@ process merge_replicate_rmdup {
     set val(sampleid), file(orphan_bams), file(markdup_bam) from rm_orphan_sort_bam_replicate_rmdup_ch.join(merge_replicate_markdup_ch, by: [0])
 
     output:
-    set val(sampleid), file("*.{bam,bam.bai}") into merge_replicate_rmdup_name_bam_ch, merge_replicate_rmdup_bedgraph_ch, merge_replicate_rmdup_macs2_ch, merge_replicate_rmdup_macs2_frip_ch
-    set val(sampleid), file("*.flagstat") into merge_replicate_rmdup_flagstat_ch, merge_replicate_rmdup_flagstat_bedgraph_ch, merge_replicate_rmdup_flagstat_macs2_frip_ch
+    set val(sampleid), file("*.{bam,bam.bai}") into merge_replicate_rmdup_name_bam_ch,
+                                                    merge_replicate_rmdup_bedgraph_ch,
+                                                    merge_replicate_rmdup_macs2_ch,
+                                                    merge_replicate_rmdup_macs2_frip_ch
+    set val(sampleid), file("*.flagstat") into merge_replicate_rmdup_flagstat_ch,
+                                               merge_replicate_rmdup_flagstat_bedgraph_ch,
+                                               merge_replicate_rmdup_flagstat_macs2_frip_ch
 
     script:
         out_prefix="${sampleid}.mRp.rmD"
@@ -855,7 +890,8 @@ process merge_replicate_name_bam {
     set val(sampleid), file(bam) from merge_replicate_rmdup_name_bam_ch
 
     output:
-    set val(sampleid), file("*.bam") into merge_replicate_name_bam_merge_replicate_featurecounts_ch, merge_replicate_name_bam_merge_sample_featurecounts_ch
+    set val(sampleid), file("*.bam") into merge_replicate_name_bam_merge_replicate_featurecounts_ch,
+                                         merge_replicate_name_bam_merge_sample_featurecounts_ch
 
     script:
         out_prefix="${sampleid}.mRp.rmD"
@@ -942,7 +978,9 @@ process merge_replicate_macs2 {
     set val(sampleid), file(bam) from merge_replicate_rmdup_macs2_ch
 
     output:
-    set val(sampleid), file("*/*.broadPeak") into merge_replicate_macs2_homer_in_ch, merge_replicate_macs2_frip_in_ch, merge_replicate_macs2_merge_peaks_in_ch
+    set val(sampleid), file("*/*.broadPeak") into merge_replicate_macs2_homer_in_ch,
+                                                  merge_replicate_macs2_frip_in_ch,
+                                                  merge_replicate_macs2_merge_peaks_in_ch
     set val(sampleid), file("*/*.{gappedPeak,xls}") into merge_replicate_macs2_output_ch
     set val(sampleid), file("*/*.sysout") into merge_replicate_macs2_sysout_ch
 
@@ -1013,10 +1051,12 @@ process merge_replicate_macs2_frip {
 }
 
 // GET LIST OF FRIP FILES ACROSS ALL SAMPLES FOR QC PLOT
-merge_replicate_macs2_frip_ch.map{ it -> [ "macs2_frip", [it[1]] ]}
-                                    .groupTuple( by: [0] )
-                                    .map{ it ->  [ it[0], it[1].flatten().sort().collect{ it.getName().replace("_peaks.frip.txt","") } , it[1].flatten().sort() ]}
-                                    .set { merge_replicate_macs2_frip_collate_ch }
+merge_replicate_macs2_frip_ch.map { it -> [ "macs2_frip", [it[1]] ] }
+                             .groupTuple(by: [0])
+                             .map { it ->  [ it[0],
+                                             it[1].flatten().sort().collect{ it.getName().replace("_peaks.frip.txt","") },
+                                             it[1].flatten().sort() ] }
+                             .set { merge_replicate_macs2_frip_collate_ch }
 
 // GENERATE PLOTS FOR FRIP SCORES ACROSS ALL SAMPLES
 process merge_replicate_macs2_fripqc {
@@ -1038,10 +1078,12 @@ process merge_replicate_macs2_fripqc {
 }
 
 // GET LIST OF HOMER ANNOTATED FILES ACROSS ALL SAMPLES FOR QC PLOTS
-merge_replicate_macs2_homer_ch.map{ it -> [ "macs2_homer_annotation", [it[1]] ]}
-                                    .groupTuple( by: [0] )
-                                    .map{ it ->  [ it[0], it[1].flatten().sort().collect{ it.getName().replace("_peaks.homer.annotatePeaks.txt","") } , it[1].flatten().sort() ]}
-                                    .set { merge_replicate_macs2_homer_collate_ch}
+merge_replicate_macs2_homer_ch.map { it -> [ "macs2_homer_annotation", [it[1]] ] }
+                              .groupTuple(by: [0])
+                              .map { it ->  [ it[0],
+                                              it[1].flatten().sort().collect{ it.getName().replace("_peaks.homer.annotatePeaks.txt","") },
+                                              it[1].flatten().sort() ] }
+                              .set { merge_replicate_macs2_homer_collate_ch }
 
 // GENERATE PLOTS FOR VARIOUS ASPECTS OF HOMER ANNOTATION ACROSS ALL SAMPLES
 process merge_replicate_macs2_homerqc {
@@ -1063,10 +1105,13 @@ process merge_replicate_macs2_homerqc {
 }
 
 // GET LIST OF PEAK ACROSS ALL SAMPLES FOR MERGING
-merge_replicate_macs2_merge_peaks_in_ch.map{ it -> [ "merged_peaks", [it[1]] ]}
-                                             .groupTuple( by: [0] )
-                                             .map{ it ->  [ it[0], it[1].flatten().sort().collect{ it.getName().replace("_peaks.broadPeak","") } , it[1].flatten().sort() ]}
-                                             .into { merge_replicate_macs2_merge_peaks_in_ch;  merge_replicate_macs2_peakqc_in_ch }
+merge_replicate_macs2_merge_peaks_in_ch.map { it -> [ "merged_peaks", [it[1]] ] }
+                                       .groupTuple(by: [0])
+                                       .map { it ->  [ it[0],
+                                                       it[1].flatten().sort().collect{ it.getName().replace("_peaks.broadPeak","") },
+                                                       it[1].flatten().sort() ] }
+                                       .into { merge_replicate_macs2_merge_peaks_in_ch;
+                                               merge_replicate_macs2_peakqc_in_ch }
 
 // GENERATE PLOTS FOR VARIOUS ASPECTS OF PEAKS ACROSS ALL SAMPLES
 process merge_replicate_macs2_peakqc {
@@ -1146,10 +1191,11 @@ process merge_replicate_macs2_merge_peaks_homer {
 }
 
 // GET LIST OF REPLICATE LEVEL BAM FILES
-merge_replicate_name_bam_merge_replicate_featurecounts_ch.map{ it -> [ "merged_bam", [it[1]] ]}
-                                                               .groupTuple( by: [0] )
-                                                               .map{ it ->  [ it[1].flatten().sort().collect{ it.getName().replace(".mRp.rmD.bam","") } , it[1].flatten().sort() ]}
-                                                               .set { merge_replicate_name_bam_merge_replicate_featurecounts_ch }
+merge_replicate_name_bam_merge_replicate_featurecounts_ch.map { it -> [ "merged_bam", [it[1]] ] }
+                                                         .groupTuple(by: [0])
+                                                         .map { it ->  [ it[1].flatten().sort().collect{ it.getName().replace(".mRp.rmD.bam","") },
+                                                                         it[1].flatten().sort() ] }
+                                                         .set { merge_replicate_name_bam_merge_replicate_featurecounts_ch }
 
 process merge_replicate_macs2_merge_peaks_featurecounts {
 
@@ -1215,10 +1261,13 @@ process merge_replicate_macs2_merge_peaks_differential {
 ///////////////////////////////////////////////////////////////////////////////
 
 // CREATE CHANNEL TO MERGE AT SAMPLE LEVEL
-rm_orphan_sort_bam_sample_ch.map{ it -> [ it[0].toString().subSequence(0, it[0].length() - 6), it[1] ]}
-                               .groupTuple( by: [0] )
-                               .map{ it ->  [ it[0], it[1].flatten() ]}
-                               .into { rm_orphan_sort_bam_sample_merge_ch; rm_orphan_sort_bam_sample_markdup_ch; rm_orphan_sort_bam_sample_rmdup_ch }
+rm_orphan_sort_bam_sample_ch.map { it -> [ it[0].toString().subSequence(0, it[0].length() - 6), it[1] ] }
+                            .groupTuple(by: [0])
+                            .map { it ->  [ it[0],
+                                            it[1].flatten() ] }
+                            .into { rm_orphan_sort_bam_sample_merge_ch;
+                                    rm_orphan_sort_bam_sample_markdup_ch;
+                                    rm_orphan_sort_bam_sample_rmdup_ch }
 
 // MERGE FILTERED BAM FILES AT SAMPLE LEVEL USING PICARD MERGESAMFILES
 process merge_sample {
@@ -1337,8 +1386,12 @@ process merge_sample_rmdup {
     set val(sampleid), file(orphan_bams), file(markdup_bam) from rm_orphan_sort_bam_sample_rmdup_ch.join(merge_sample_markdup_ch, by: [0])
 
     output:
-    set val(sampleid), file("*.{bam,bam.bai}") into merge_sample_rmdup_bedgraph_ch, merge_sample_rmdup_macs2_ch, merge_sample_rmdup_macs2_frip_ch
-    set val(sampleid), file("*.flagstat") into merge_sample_rmdup_flagstat_ch, merge_sample_rmdup_flagstat_bedgraph_ch, merge_sample_rmdup_flagstat_macs2_frip_ch
+    set val(sampleid), file("*.{bam,bam.bai}") into merge_sample_rmdup_bedgraph_ch,
+                                                    merge_sample_rmdup_macs2_ch,
+                                                    merge_sample_rmdup_macs2_frip_ch
+    set val(sampleid), file("*.flagstat") into merge_sample_rmdup_flagstat_ch,
+                                               merge_sample_rmdup_flagstat_bedgraph_ch,
+                                               merge_sample_rmdup_flagstat_macs2_frip_ch
 
     script:
         out_prefix="${sampleid}.mSm.rmD"
@@ -1435,7 +1488,9 @@ process merge_sample_macs2 {
     set val(sampleid), file(bam) from merge_sample_rmdup_macs2_ch
 
     output:
-    set val(sampleid), file("*/*.broadPeak") into merge_sample_macs2_homer_in_ch, merge_sample_macs2_frip_in_ch, merge_sample_macs2_merge_peaks_in_ch
+    set val(sampleid), file("*/*.broadPeak") into merge_sample_macs2_homer_in_ch,
+                                                  merge_sample_macs2_frip_in_ch,
+                                                  merge_sample_macs2_merge_peaks_in_ch
     set val(sampleid), file("*/*.{gappedPeak,xls}") into merge_sample_macs2_output_ch
     set val(sampleid), file("*/*.sysout") into merge_sample_macs2_sysout_ch
 
@@ -1505,10 +1560,12 @@ process merge_sample_macs2_frip {
 }
 
 // GET LIST OF FRIP FILES ACROSS ALL SAMPLES FOR QC PLOT
-merge_sample_macs2_frip_ch.map{ it -> [ "macs2_frip", [it[1]] ]}
-                                    .groupTuple( by: [0] )
-                                    .map{ it ->  [ it[0], it[1].flatten().sort().collect{ it.getName().replace("_peaks.frip.txt","") } , it[1].flatten().sort() ]}
-                                    .set { merge_sample_macs2_frip_collate_ch }
+merge_sample_macs2_frip_ch.map { it -> [ "macs2_frip", [it[1]] ] }
+                          .groupTuple(by: [0])
+                          .map { it ->  [ it[0],
+                                          it[1].flatten().sort().collect{ it.getName().replace("_peaks.frip.txt","") },
+                                          it[1].flatten().sort() ] }
+                          .set { merge_sample_macs2_frip_collate_ch }
 
 // GENERATE PLOTS FOR FRIP SCORES ACROSS ALL SAMPLES
 process merge_sample_macs2_fripqc {
@@ -1530,10 +1587,12 @@ process merge_sample_macs2_fripqc {
 }
 
 // GET LIST OF HOMER ANNOTATED FILES ACROSS ALL SAMPLES FOR QC PLOTS
-merge_sample_macs2_homer_ch.map{ it -> [ "macs2_homer_annotation", [it[1]] ]}
-                                 .groupTuple( by: [0] )
-                                 .map{ it ->  [ it[0], it[1].flatten().sort().collect{ it.getName().replace("_peaks.homer.annotatePeaks.txt","") } , it[1].flatten().sort() ]}
-                                 .set { merge_sample_macs2_homer_collate_ch}
+merge_sample_macs2_homer_ch.map { it -> [ "macs2_homer_annotation", [it[1]] ] }
+                           .groupTuple(by: [0])
+                           .map { it ->  [ it[0],
+                                           it[1].flatten().sort().collect{ it.getName().replace("_peaks.homer.annotatePeaks.txt","") },
+                                           it[1].flatten().sort() ] }
+                           .set { merge_sample_macs2_homer_collate_ch }
 
 // GENERATE PLOTS FOR VARIOUS ASPECTS OF HOMER ANNOTATION ACROSS ALL SAMPLES
 process merge_sample_macs2_homerqc {
@@ -1555,10 +1614,13 @@ process merge_sample_macs2_homerqc {
 }
 
 // GET LIST OF PEAK ACROSS ALL SAMPLES FOR MERGING
-merge_sample_macs2_merge_peaks_in_ch.map{ it -> [ "merged_peaks", [it[1]] ]}
-                                             .groupTuple( by: [0] )
-                                             .map{ it ->  [ it[0], it[1].flatten().sort().collect{ it.getName().replace("_peaks.broadPeak","") } , it[1].flatten().sort() ]}
-                                             .into { merge_sample_macs2_merge_peaks_in_ch; merge_sample_macs2_peakqc_in_ch }
+merge_sample_macs2_merge_peaks_in_ch.map { it -> [ "merged_peaks", [ it[1]] ] }
+                                    .groupTuple(by: [0])
+                                    .map { it ->  [ it[0],
+                                                    it[1].flatten().sort().collect{ it.getName().replace("_peaks.broadPeak","") },
+                                                    it[1].flatten().sort() ] }
+                                    .into { merge_sample_macs2_merge_peaks_in_ch;
+                                            merge_sample_macs2_peakqc_in_ch }
 
 // GENERATE PLOTS FOR VARIOUS ASPECTS OF PEAKS ACROSS ALL SAMPLES
 process merge_sample_macs2_peakqc {
@@ -1637,10 +1699,11 @@ process merge_sample_macs2_merge_peaks_homer {
 }
 
 // GET LIST OF REPLICATE LEVEL BAM FILES
-merge_replicate_name_bam_merge_sample_featurecounts_ch.map{ it -> [ "merged_bam", [it[1]] ]}
-                                                               .groupTuple( by: [0] )
-                                                               .map{ it ->  [ it[1].flatten().sort().collect{ it.getName().replace(".mRp.rmD.bam","") } , it[1].flatten().sort() ]}
-                                                               .set { merge_replicate_name_bam_merge_sample_featurecounts_ch }
+merge_replicate_name_bam_merge_sample_featurecounts_ch.map { it -> [ "merged_bam", [ it[1]] ]}
+                                                      .groupTuple(by: [0])
+                                                      .map { it ->  [ it[1].flatten().sort().collect{ it.getName().replace(".mRp.rmD.bam","") },
+                                                                      it[1].flatten().sort() ] }
+                                                      .set { merge_replicate_name_bam_merge_sample_featurecounts_ch }
 
 process merge_sample_macs2_merge_peaks_featurecounts {
 
@@ -1706,15 +1769,15 @@ process merge_sample_macs2_merge_peaks_differential {
 ///////////////////////////////////////////////////////////////////////////////
 
 // MERGE CHANNELS FOR REPLICATE AND SAMPLE LEVEL FILES TO AVOID RUNNING PROCESS PER SAMPLE
-merge_replicate_bigwig_ch.map{ it -> [ 'bigwig', it[1] ]}
+merge_replicate_bigwig_ch.map { it -> [ 'bigwig', it[1] ] }
                          .groupTuple()
-                         .map{ it -> it[1].sort() }
-                         .set{ merge_replicate_bigwig_ch}
+                         .map { it -> it[1].sort() }
+                         .set { merge_replicate_bigwig_ch }
 
-merge_sample_bigwig_ch.map{ it -> [ 'bigwig', it[1] ]}
-                        .groupTuple()
-                        .map{ it -> it[1].sort() }
-                        .set{ merge_sample_bigwig_ch }
+merge_sample_bigwig_ch.map { it -> [ 'bigwig', it[1] ] }
+                      .groupTuple()
+                      .map { it -> it[1].sort() }
+                      .set { merge_sample_bigwig_ch }
 
 // HAD TO WRITE CUSTOM SCRIPT TO REORDER TRACKS IN SESSION FILE MORE SENSIBLY.
 // PROBABLY POSSIBLE WITH NEXTFLOW BUT MUCH EASIER IN PYTHON!
