@@ -3,7 +3,7 @@
 vim: syntax=groovy
 -*- mode: groovy;-*-
 ==============================================================================
-    B A B S - A T A C S E Q  P A I R E D-E N D   B E S T    P R A C T I C E
+    B A B S - A T A C S E Q  P A I R E D - E N D   B E S T    P R A C T I C E
 ==============================================================================
  ATACSeq Analysis Pipeline For Paired-End Illumina Samples. Started 11th May 2018.
  #### Homepage / Documentation
@@ -306,8 +306,18 @@ process raw_fastqscreen {
         """
         ln -s ${fastq_1} ${sampleid}_1.fastq.gz
         ln -s ${fastq_2} ${sampleid}_2.fastq.gz
-        fastq_screen --outdir ./ --subset 200000 --aligner bowtie2 --conf ${fastqscreen_config} --threads ${task.cpus} ${sampleid}_1.fastq.gz
-        fastq_screen --outdir ./ --subset 200000 --aligner bowtie2 --conf ${fastqscreen_config} --threads ${task.cpus} ${sampleid}_2.fastq.gz
+        fastq_screen --outdir ./ \\
+                     --subset 200000 \\
+                     --aligner bowtie2 \\
+                     --conf ${fastqscreen_config} \\
+                     --threads ${task.cpus} \\
+                     ${sampleid}_1.fastq.gz
+        fastq_screen --outdir ./ \\
+                     --subset 200000 \\
+                     --aligner bowtie2 \\
+                     --conf ${fastqscreen_config} \\
+                     --threads ${task.cpus} \\
+                     ${sampleid}_2.fastq.gz
         """
 }
 
@@ -341,7 +351,14 @@ process cutadapt {
         """
         ln -s ${fastq_1} ${sampleid}_1.fastq.gz
         ln -s ${fastq_2} ${sampleid}_2.fastq.gz
-        cutadapt -a ${adapter_seq} -A ${adapter_seq} --minimum-length=25 --quality-cutoff=20 -o ${sampleid}_1.trim.fastq.gz -p ${sampleid}_2.trim.fastq.gz ${sampleid}_1.fastq.gz ${sampleid}_2.fastq.gz > ${sampleid}.cutadapt.log
+        cutadapt -a ${adapter_seq} \\
+                 -A ${adapter_seq} \\
+                 --minimum-length=25 \\
+                 --quality-cutoff=20 \\
+                 -o ${sampleid}_1.trim.fastq.gz \\
+                 -p ${sampleid}_2.trim.fastq.gz \\
+                 ${sampleid}_1.fastq.gz \\
+                 ${sampleid}_2.fastq.gz > ${sampleid}.cutadapt.log
         """
 }
 
@@ -525,7 +542,15 @@ process markdup {
     script:
         out_prefix="${sampleid}.mkD"
         """
-        java -Xmx${task.memory.toString().split(" ")[0]}g -jar \${EBROOTPICARD}/picard.jar MarkDuplicates VALIDATION_STRINGENCY=LENIENT REMOVE_DUPLICATES=false ASSUME_SORTED=true INPUT=${bam[0]} OUTPUT=${out_prefix}.sorted.bam METRICS_FILE=${out_prefix}.MarkDuplicates.metrics.txt TMP_DIR=tmp >> ${out_prefix}.MarkDuplicates.sysout 2>&1
+        java -Xmx${task.memory.toString().split(" ")[0]}g -jar \${EBROOTPICARD}/picard.jar MarkDuplicates \\
+             VALIDATION_STRINGENCY=LENIENT \\
+             REMOVE_DUPLICATES=false \\
+             ASSUME_SORTED=true \\
+             TMP_DIR=tmp \\
+             INPUT=${bam[0]} \\
+             OUTPUT=${out_prefix}.sorted.bam \\
+             METRICS_FILE=${out_prefix}.MarkDuplicates.metrics.txt \\
+             >> ${out_prefix}.MarkDuplicates.sysout 2>&1
         samtools index ${out_prefix}.sorted.bam
         samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
         samtools idxstats ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.idxstats
@@ -557,7 +582,13 @@ process markdup_collectmetrics {
     script:
         out_prefix="${sampleid}.mkD"
         """
-        java -Xmx${task.memory.toString().split(" ")[0]}g -jar \${EBROOTPICARD}/picard.jar CollectMultipleMetrics VALIDATION_STRINGENCY=LENIENT INPUT=${bam[0]} OUTPUT=${out_prefix}.CollectMultipleMetrics REFERENCE_SEQUENCE=${fasta} TMP_DIR=tmp >> ${out_prefix}.CollectMultipleMetrics.sysout 2>&1
+        java -Xmx${task.memory.toString().split(" ")[0]}g -jar \${EBROOTPICARD}/picard.jar CollectMultipleMetrics \\
+             VALIDATION_STRINGENCY=LENIENT \\
+             TMP_DIR=tmp \\
+             INPUT=${bam[0]} \\
+             OUTPUT=${out_prefix}.CollectMultipleMetrics \\
+             REFERENCE_SEQUENCE=${fasta} \\
+             >> ${out_prefix}.CollectMultipleMetrics.sysout 2>&1
         """
 }
 
@@ -593,7 +624,18 @@ process filter_bam {
         // 0x0400 = read is PCR or optical duplicate
         out_prefix="${sampleid}.mkD.clN"
         """
-        samtools view -f 0x001 -f 0x002 -F 0x004 -F 0x0008 -F 0x0100 -q 1 -L ${mito_bed} -b ${bam[0]} | bamtools filter -out ${out_prefix}.sorted.bam -script ${bamtools_filter_pe_config}
+        samtools view \\
+                 -f 0x001 \\
+                 -f 0x002 \\
+                 -F 0x004 \\
+                 -F 0x0008 \\
+                 -F 0x0100 \\
+                 -q 1 \\
+                 -L ${mito_bed} \\
+                 -b ${bam[0]} \\
+                 | bamtools filter \\
+                            -out ${out_prefix}.sorted.bam \\
+                            -script ${bamtools_filter_pe_config}
         samtools index ${out_prefix}.sorted.bam
         samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
         samtools sort -n -@ ${task.cpus} -o ${out_prefix}.bam -T ${out_prefix} ${out_prefix}.sorted.bam
@@ -692,7 +734,13 @@ process merge_replicate {
         flagstat_files = bams.findAll { it.toString().endsWith('.flagstat') }.sort()
         if (bam_files.size() > 1) {
             """
-            java -Xmx${task.memory.toString().split(" ")[0]}g -jar \${EBROOTPICARD}/picard.jar MergeSamFiles VALIDATION_STRINGENCY=LENIENT SORT_ORDER=coordinate ${'INPUT='+bam_files.join(' INPUT=')} OUTPUT=${out_prefix}.sorted.bam TMP_DIR=tmp >> ${out_prefix}.MergeSamFiles.sysout 2>&1
+            java -Xmx${task.memory.toString().split(" ")[0]}g -jar \${EBROOTPICARD}/picard.jar MergeSamFiles \\
+                 VALIDATION_STRINGENCY=LENIENT \\
+                 SORT_ORDER=coordinate \\
+                 TMP_DIR=tmp \\
+                 ${'INPUT='+bam_files.join(' INPUT=')} \\
+                 OUTPUT=${out_prefix}.sorted.bam \\
+                 >> ${out_prefix}.MergeSamFiles.sysout 2>&1
             samtools index ${out_prefix}.sorted.bam
             samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
             """
@@ -736,7 +784,15 @@ process merge_replicate_markdup {
         flagstat_files = orphan_bams.findAll { it.toString().endsWith('.flagstat') }.sort()
         if (bam_files.size() > 1) {
             """
-            java -Xmx${task.memory.toString().split(" ")[0]}g -jar \${EBROOTPICARD}/picard.jar MarkDuplicates VALIDATION_STRINGENCY=LENIENT REMOVE_DUPLICATES=false ASSUME_SORTED=true INPUT=${merged_bam[0]} OUTPUT=${out_prefix}.sorted.bam METRICS_FILE=${out_prefix}.MarkDuplicates.metrics.txt TMP_DIR=tmp >> ${out_prefix}.MarkDuplicates.sysout 2>&1
+            java -Xmx${task.memory.toString().split(" ")[0]}g -jar \${EBROOTPICARD}/picard.jar MarkDuplicates \\
+                 VALIDATION_STRINGENCY=LENIENT \\
+                 REMOVE_DUPLICATES=false \\
+                 ASSUME_SORTED=true \\
+                 TMP_DIR=tmp \\
+                 INPUT=${merged_bam[0]} \\
+                 OUTPUT=${out_prefix}.sorted.bam \\
+                 METRICS_FILE=${out_prefix}.MarkDuplicates.metrics.txt \\
+                 >> ${out_prefix}.MarkDuplicates.sysout 2>&1
             samtools index ${out_prefix}.sorted.bam
             samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
             """
@@ -893,7 +949,17 @@ process merge_replicate_macs2 {
     script:
         """
         mkdir -p ${sampleid}
-        macs2 callpeak --verbose=2 -t ${bam[0]} --gsize=${params.macs_genome_size} --outdir=${sampleid} --name=${sampleid} --format BAMPE --keep-dup all --nomodel --broad >> ${sampleid}/${sampleid}.macs2.sysout 2>&1
+        macs2 callpeak \\
+              --verbose=2 \\
+              -t ${bam[0]} \\
+              --gsize=${params.macs_genome_size} \\
+              --outdir=${sampleid} \\
+              --name=${sampleid} \\
+              --format BAMPE \\
+              --keep-dup all \\
+              --nomodel \\
+              --broad \\
+              >> ${sampleid}/${sampleid}.macs2.sysout 2>&1
         """
 }
 
@@ -916,7 +982,12 @@ process merge_replicate_macs2_homer {
     script:
         """
         mkdir -p ${sampleid}
-        annotatePeaks.pl ${peak} ${fasta} -gid -gtf ${gtf} > ${sampleid}/${sampleid}_peaks.homer.annotatePeaks.txt 2> ${sampleid}/${sampleid}_peaks.homer.annotatePeaks.sysout
+        annotatePeaks.pl ${peak} \\
+                         ${fasta} \\
+                         -gid \\
+                         -gtf ${gtf} \\
+                         > ${sampleid}/${sampleid}_peaks.homer.annotatePeaks.txt \\
+                         2> ${sampleid}/${sampleid}_peaks.homer.annotatePeaks.sysout
         """
 }
 
@@ -1034,7 +1105,8 @@ process merge_replicate_macs2_merge_peaks {
 
    script:
        """
-       sort -k1,1 -k2,2n ${peaks.join(' ')} | mergeBed -c 2,3,4,5,6,7,8,9 -o collapse,collapse,collapse,collapse,collapse,collapse,collapse,collapse > ${name}.txt
+       sort -k1,1 -k2,2n ${peaks.join(' ')} \\
+            | mergeBed -c 2,3,4,5,6,7,8,9 -o collapse,collapse,collapse,collapse,collapse,collapse,collapse,collapse > ${name}.txt
        python $baseDir/bin/expand_merged_macs.py ${name}.txt ${sampleids.join(',')} ${name}.boolean.txt --min_samples 1
        awk -v FS='\t' -v OFS='\t' 'FNR > 1 { print \$1, \$2, \$3, \$4, "0", "+" }' ${name}.boolean.txt > ${name}.bed
        echo -e "GeneID\tChr\tStart\tEnd\tStrand" > ${name}.saf
@@ -1061,7 +1133,13 @@ process merge_replicate_macs2_merge_peaks_homer {
 
     script:
         """
-        annotatePeaks.pl ${bed} ${fasta} -gid -gtf ${gtf} > ${name}.homer.annotatePeaks.txt 2> ${name}.homer.annotatePeaks.sysout
+        annotatePeaks.pl ${bed} \\
+                         ${fasta} \\
+                         -gid \\
+                         -gtf \\
+                         ${gtf} \\
+                         > ${name}.homer.annotatePeaks.txt \\
+                         2> ${name}.homer.annotatePeaks.sysout
         cut -f2- ${name}.homer.annotatePeaks.txt | awk 'NR==1; NR > 1 {print \$0 | "sort -k1,1 -k2,2n"}' | cut -f6- > tmp.txt
         paste ${bool} tmp.txt > ${bool.toString().replace(".txt","")}.homer.annotatePeaks.txt
         """
@@ -1091,7 +1169,20 @@ process merge_replicate_macs2_merge_peaks_featurecounts {
 
     script:
         """
-        featureCounts -F SAF -O -T ${task.cpus} --fracOverlap 0.5 --primary --ignoreDup -p -B -C --donotsort -a ${saf} -o ${name}.replicate.featureCounts.txt ${bams.join(' ')} >> ${name}.replicate.featureCounts.sysout 2>&1
+        featureCounts -F SAF \\
+                      -O \\
+                      -T ${task.cpus} \\
+                      --fracOverlap 0.5 \\
+                      --primary \\
+                      --ignoreDup \\
+                      -p \\
+                      -B \\
+                      -C \\
+                      --donotsort \\
+                      -a ${saf} \\
+                      -o ${name}.replicate.featureCounts.txt \\
+                      ${bams.join(' ')} \\
+                      >> ${name}.replicate.featureCounts.sysout 2>&1
         """
 }
 
@@ -1157,7 +1248,13 @@ process merge_sample {
         flagstat_files = bams.findAll { it.toString().endsWith('.flagstat') }.sort()
         if (bam_files.size() > 1) {
             """
-            java -Xmx${task.memory.toString().split(" ")[0]}g -jar \${EBROOTPICARD}/picard.jar MergeSamFiles VALIDATION_STRINGENCY=LENIENT SORT_ORDER=coordinate ${'INPUT='+bam_files.join(' INPUT=')} OUTPUT=${out_prefix}.sorted.bam TMP_DIR=tmp >> ${out_prefix}.MergeSamFiles.sysout 2>&1
+            java -Xmx${task.memory.toString().split(" ")[0]}g -jar \${EBROOTPICARD}/picard.jar MergeSamFiles \\
+                 VALIDATION_STRINGENCY=LENIENT \\
+                 SORT_ORDER=coordinate \\
+                 TMP_DIR=tmp \\
+                 ${'INPUT='+bam_files.join(' INPUT=')} \\
+                 OUTPUT=${out_prefix}.sorted.bam \\
+                 >> ${out_prefix}.MergeSamFiles.sysout 2>&1
             samtools index ${out_prefix}.sorted.bam
             samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
             """
@@ -1201,7 +1298,15 @@ process merge_sample_markdup {
         flagstat_files = orphan_bams.findAll { it.toString().endsWith('.flagstat') }.sort()
         if (bam_files.size() > 1) {
             """
-            java -Xmx${task.memory.toString().split(" ")[0]}g -jar \${EBROOTPICARD}/picard.jar MarkDuplicates VALIDATION_STRINGENCY=LENIENT REMOVE_DUPLICATES=false ASSUME_SORTED=true INPUT=${merged_bam[0]} OUTPUT=${out_prefix}.sorted.bam METRICS_FILE=${out_prefix}.MarkDuplicates.metrics.txt TMP_DIR=tmp >> ${out_prefix}.MarkDuplicates.sysout 2>&1
+            java -Xmx${task.memory.toString().split(" ")[0]}g -jar \${EBROOTPICARD}/picard.jar MarkDuplicates \\
+                 VALIDATION_STRINGENCY=LENIENT \\
+                 REMOVE_DUPLICATES=false \\
+                 ASSUME_SORTED=true \\
+                 TMP_DIR=tmp \\
+                 INPUT=${merged_bam[0]} \\
+                 OUTPUT=${out_prefix}.sorted.bam \\
+                 METRICS_FILE=${out_prefix}.MarkDuplicates.metrics.txt \\
+                 >> ${out_prefix}.MarkDuplicates.sysout 2>&1
             samtools index ${out_prefix}.sorted.bam
             samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
             """
@@ -1337,7 +1442,16 @@ process merge_sample_macs2 {
     script:
         """
         mkdir -p ${sampleid}
-        macs2 callpeak --verbose=2 -t ${bam[0]} --gsize=${params.macs_genome_size} --outdir=${sampleid} --name=${sampleid} --format BAMPE --keep-dup all --nomodel --broad >> ${sampleid}/${sampleid}.macs2.sysout 2>&1
+        macs2 callpeak \\
+              --verbose=2 \\
+              -t ${bam[0]} \\
+              --gsize=${params.macs_genome_size} \\
+              --outdir=${sampleid} --name=${sampleid} \\
+              --format BAMPE \\
+              --keep-dup all \\
+              --nomodel \\
+              --broad \\
+              >> ${sampleid}/${sampleid}.macs2.sysout 2>&1
         """
 }
 
@@ -1360,7 +1474,12 @@ process merge_sample_macs2_homer {
     script:
         """
         mkdir -p ${sampleid}
-        annotatePeaks.pl ${peak} ${fasta} -gid -gtf ${gtf} > ${sampleid}/${sampleid}_peaks.homer.annotatePeaks.txt 2> ${sampleid}/${sampleid}_peaks.homer.annotatePeaks.sysout
+        annotatePeaks.pl ${peak} \\
+                         ${fasta} \\
+                         -gid \\
+                         -gtf ${gtf} \\
+                         > ${sampleid}/${sampleid}_peaks.homer.annotatePeaks.txt \\
+                         2> ${sampleid}/${sampleid}_peaks.homer.annotatePeaks.sysout
         """
 }
 
@@ -1478,7 +1597,8 @@ process merge_sample_macs2_merge_peaks {
 
    script:
        """
-       sort -k1,1 -k2,2n ${peaks.join(' ')} | mergeBed -c 2,3,4,5,6,7,8,9 -o collapse,collapse,collapse,collapse,collapse,collapse,collapse,collapse > ${name}.txt
+       sort -k1,1 -k2,2n ${peaks.join(' ')} \\
+            | mergeBed -c 2,3,4,5,6,7,8,9 -o collapse,collapse,collapse,collapse,collapse,collapse,collapse,collapse > ${name}.txt
        python $baseDir/bin/expand_merged_macs.py ${name}.txt ${sampleids.join(',')} ${name}.boolean.txt --min_samples 1
        awk -v FS='\t' -v OFS='\t' 'FNR > 1 { print \$1, \$2, \$3, \$4, "0", "+" }' ${name}.boolean.txt > ${name}.bed
        echo -e "GeneID\tChr\tStart\tEnd\tStrand" > ${name}.saf
@@ -1505,7 +1625,12 @@ process merge_sample_macs2_merge_peaks_homer {
 
     script:
         """
-        annotatePeaks.pl ${bed} ${fasta} -gid -gtf ${gtf} > ${name}.homer.annotatePeaks.txt 2> ${name}.homer.annotatePeaks.sysout
+        annotatePeaks.pl ${bed} \\
+                         ${fasta} \\
+                         -gid \\
+                         -gtf ${gtf} \\
+                         > ${name}.homer.annotatePeaks.txt \\
+                         2> ${name}.homer.annotatePeaks.sysout
         cut -f2- ${name}.homer.annotatePeaks.txt | awk 'NR==1; NR > 1 {print \$0 | "sort -k1,1 -k2,2n"}' | cut -f6- > tmp.txt
         paste ${bool} tmp.txt > ${bool.toString().replace(".txt","")}.homer.annotatePeaks.txt
         """
@@ -1535,7 +1660,20 @@ process merge_sample_macs2_merge_peaks_featurecounts {
 
     script:
         """
-        featureCounts -F SAF -O -T ${task.cpus} --fracOverlap 0.5 --primary --ignoreDup -p -B -C --donotsort -a ${saf} -o ${name}.replicate.featureCounts.txt ${bams.join(' ')} >> ${name}.replicate.featureCounts.sysout 2>&1
+        featureCounts -F SAF \\
+                      -O \\
+                      -T ${task.cpus} \\
+                      --fracOverlap 0.5 \\
+                      --primary \\
+                      --ignoreDup \\
+                      -p \\
+                      -B \\
+                      -C \\
+                      --donotsort \\
+                      -a ${saf} \\
+                      -o ${name}.replicate.featureCounts.txt \\
+                      ${bams.join(' ')} \\
+                      >> ${name}.replicate.featureCounts.sysout 2>&1
         """
 }
 
@@ -1628,7 +1766,15 @@ process multiqc {
 
     script:
         """
-        multiqc ${params.outdir_abspath} -f --config ${params.multiqc_config} --filename BABS-ATACSeqPE_multiqc_report.html -m fastqc -m fastq_screen -m cutadapt -m samtools -m picard
+        multiqc ${params.outdir_abspath} \\
+                -f \\
+                --config ${params.multiqc_config} \\
+                --filename BABS-ATACSeqPE_multiqc_report.html \\
+                -m fastqc \\
+                -m fastq_screen \\
+                -m cutadapt \\
+                -m samtools \\
+                -m picard
         """
 }
 
