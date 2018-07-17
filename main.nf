@@ -131,7 +131,7 @@ fastqscreen_config = file(params.fastqscreen_config)
 if( params.fasta && file(params.fasta).exists() ){
     Channel
       .fromPath(params.fasta)
-      .into {fasta_index_ch; fasta_markdup_collectmetrics_ch; fasta_merge_replicate_macs2_broad_homer_ch; fasta_merge_replicate_macs2_narrow_homer_ch; fasta_merge_sample_macs2_broad_homer_ch; fasta_merge_sample_macs2_narrow_homer_ch; fasta_merge_replicate_macs2_broad_merge_peaks_homer_ch; fasta_merge_replicate_macs2_narrow_merge_peaks_homer_ch; fasta_merge_sample_macs2_broad_merge_peaks_homer_ch; fasta_merge_sample_macs2_narrow_merge_peaks_homer_ch; fasta_igv_ch}
+      .into {fasta_index_ch; fasta_markdup_collectmetrics_ch; fasta_merge_replicate_macs2_homer_ch; fasta_merge_sample_macs2_homer_ch; fasta_merge_replicate_macs2_merge_peaks_homer_ch; fasta_merge_sample_macs2_merge_peaks_homer_ch; fasta_igv_ch}
 } else {
     exit 1, "Genome fasta file not found: ${params.fasta}"
 }
@@ -139,7 +139,7 @@ if( params.fasta && file(params.fasta).exists() ){
 if( params.gtf && file(params.gtf).exists() ){
     Channel
       .fromPath(params.gtf)
-      .into { gtf_merge_replicate_macs2_broad_homer_ch; gtf_merge_replicate_macs2_narrow_homer_ch; gtf_merge_sample_macs2_broad_homer_ch; gtf_merge_sample_macs2_narrow_homer_ch; gtf_merge_replicate_macs2_broad_merge_peaks_homer_ch; gtf_merge_replicate_macs2_narrow_merge_peaks_homer_ch; gtf_merge_sample_macs2_broad_merge_peaks_homer_ch; gtf_merge_sample_macs2_narrow_merge_peaks_homer_ch; gtf_igv_ch }
+      .into { gtf_merge_replicate_macs2_homer_ch; gtf_merge_sample_macs2_homer_ch; gtf_merge_replicate_macs2_merge_peaks_homer_ch; gtf_merge_sample_macs2_merge_peaks_homer_ch; gtf_igv_ch }
 } else {
     exit 1, "GTF file not found: ${params.gtf}"
 }
@@ -767,8 +767,8 @@ process merge_replicate_rmdup {
     set val(sampleid), file(orphan_bams), file(markdup_bam) from rm_orphan_sort_bam_replicate_rmdup_ch.join(merge_replicate_markdup_ch, by: [0])
 
     output:
-    set val(sampleid), file("*.{bam,bam.bai}") into merge_replicate_rmdup_name_bam_ch, merge_replicate_rmdup_bedgraph_ch, merge_replicate_rmdup_macs2_broad_ch, merge_replicate_rmdup_macs2_broad_frip_ch, merge_replicate_rmdup_macs2_narrow_ch, merge_replicate_rmdup_macs2_narrow_frip_ch
-    set val(sampleid), file("*.flagstat") into merge_replicate_rmdup_flagstat_ch, merge_replicate_rmdup_flagstat_bedgraph_ch, merge_replicate_rmdup_flagstat_macs2_broad_frip_ch, merge_replicate_rmdup_flagstat_macs2_narrow_frip_ch
+    set val(sampleid), file("*.{bam,bam.bai}") into merge_replicate_rmdup_name_bam_ch, merge_replicate_rmdup_bedgraph_ch, merge_replicate_rmdup_macs2_ch, merge_replicate_rmdup_macs2_frip_ch
+    set val(sampleid), file("*.flagstat") into merge_replicate_rmdup_flagstat_ch, merge_replicate_rmdup_flagstat_bedgraph_ch, merge_replicate_rmdup_flagstat_macs2_frip_ch
 
     script:
         out_prefix="${sampleid}.mRp.rmD"
@@ -799,7 +799,7 @@ process merge_replicate_name_bam {
     set val(sampleid), file(bam) from merge_replicate_rmdup_name_bam_ch
 
     output:
-    set val(sampleid), file("*.bam") into merge_replicate_name_bam_merge_replicate_broad_featurecounts_ch, merge_replicate_name_bam_merge_replicate_narrow_featurecounts_ch, merge_replicate_name_bam_merge_sample_broad_featurecounts_ch, merge_replicate_name_bam_merge_sample_narrow_featurecounts_ch
+    set val(sampleid), file("*.bam") into merge_replicate_name_bam_merge_replicate_featurecounts_ch, merge_replicate_name_bam_merge_sample_featurecounts_ch
 
     script:
         out_prefix="${sampleid}.mRp.rmD"
@@ -826,7 +826,7 @@ process merge_replicate_bedgraph {
 
     tag "$sampleid"
 
-    publishDir "${params.outdir}/align/mergeReplicate/bigwig/", mode: 'copy',
+    publishDir "${params.outdir}/align/mergeReplicate/bigwig", mode: 'copy',
                 saveAs: {filename ->
                             if (filename.endsWith(".txt")) "scale_factor/$filename"
                             else null
@@ -876,19 +876,19 @@ process merge_replicate_bigwig {
 ////////////////////////////////////////////////////
 
 // CALL BROAD PEAKS USING MACS2
-process merge_replicate_macs2_broad {
+process merge_replicate_macs2 {
 
     tag "$sampleid"
 
-    publishDir "${params.outdir}/align/mergeReplicate/macs2/broadPeak", mode: 'copy'
+    publishDir "${params.outdir}/align/mergeReplicate/macs2", mode: 'copy'
 
     input:
-    set val(sampleid), file(bam) from merge_replicate_rmdup_macs2_broad_ch
+    set val(sampleid), file(bam) from merge_replicate_rmdup_macs2_ch
 
     output:
-    set val(sampleid), file("*/*.broadPeak") into merge_replicate_macs2_broad_homer_in_ch, merge_replicate_macs2_broad_frip_in_ch, merge_replicate_macs2_broad_merge_peaks_in_ch
-    set val(sampleid), file("*/*.{gappedPeak,xls}") into merge_replicate_macs2_broad_output_ch
-    set val(sampleid), file("*/*.sysout") into merge_replicate_macs2_broad_sysout_ch
+    set val(sampleid), file("*/*.broadPeak") into merge_replicate_macs2_homer_in_ch, merge_replicate_macs2_frip_in_ch, merge_replicate_macs2_merge_peaks_in_ch
+    set val(sampleid), file("*/*.{gappedPeak,xls}") into merge_replicate_macs2_output_ch
+    set val(sampleid), file("*/*.sysout") into merge_replicate_macs2_sysout_ch
 
     script:
         """
@@ -898,20 +898,20 @@ process merge_replicate_macs2_broad {
 }
 
 // ANNOTATE PEAKS USING HOMER ANNOTATEPEAKS
-process merge_replicate_macs2_broad_homer {
+process merge_replicate_macs2_homer {
 
     tag "$sampleid"
 
-    publishDir "${params.outdir}/align/mergeReplicate/macs2/broadPeak", mode: 'copy'
+    publishDir "${params.outdir}/align/mergeReplicate/macs2", mode: 'copy'
 
     input:
-    set val(sampleid), file(peak) from merge_replicate_macs2_broad_homer_in_ch
-    file fasta from fasta_merge_replicate_macs2_broad_homer_ch.collect()
-    file gtf from gtf_merge_replicate_macs2_broad_homer_ch.collect()
+    set val(sampleid), file(peak) from merge_replicate_macs2_homer_in_ch
+    file fasta from fasta_merge_replicate_macs2_homer_ch.collect()
+    file gtf from gtf_merge_replicate_macs2_homer_ch.collect()
 
     output:
-    set val(sampleid), file("*/*.annotatePeaks.txt") into merge_replicate_macs2_broad_homer_ch
-    set val(sampleid), file("*/*.annotatePeaks.sysout") into merge_replicate_macs2_broad_homer_sysout_ch
+    set val(sampleid), file("*/*.annotatePeaks.txt") into merge_replicate_macs2_homer_ch
+    set val(sampleid), file("*/*.annotatePeaks.sysout") into merge_replicate_macs2_homer_sysout_ch
 
     script:
         """
@@ -921,17 +921,17 @@ process merge_replicate_macs2_broad_homer {
 }
 
 // CALCULATE FRIP SCORE USING BEDTOOLS
-process merge_replicate_macs2_broad_frip {
+process merge_replicate_macs2_frip {
 
     tag "$sampleid"
 
-    publishDir "${params.outdir}/align/mergeReplicate/macs2/broadPeak", mode: 'copy'
+    publishDir "${params.outdir}/align/mergeReplicate/macs2", mode: 'copy'
 
     input:
-    set val(sampleid), file(peak), file(bam), file(flagstat) from merge_replicate_macs2_broad_frip_in_ch.join(merge_replicate_rmdup_macs2_broad_frip_ch, by: [0]).join(merge_replicate_rmdup_flagstat_macs2_broad_frip_ch, by: [0])
+    set val(sampleid), file(peak), file(bam), file(flagstat) from merge_replicate_macs2_frip_in_ch.join(merge_replicate_rmdup_macs2_frip_ch, by: [0]).join(merge_replicate_rmdup_flagstat_macs2_frip_ch, by: [0])
 
     output:
-    set val(sampleid), file("*/*.frip.txt") into merge_replicate_macs2_broad_frip_ch
+    set val(sampleid), file("*/*.frip.txt") into merge_replicate_macs2_frip_ch
 
     script:
         """
@@ -942,23 +942,23 @@ process merge_replicate_macs2_broad_frip {
 }
 
 // GET LIST OF FRIP FILES ACROSS ALL SAMPLES FOR QC PLOT
-merge_replicate_macs2_broad_frip_ch.map{ it -> [ "macs2_frip", [it[1]] ]}
+merge_replicate_macs2_frip_ch.map{ it -> [ "macs2_frip", [it[1]] ]}
                                     .groupTuple( by: [0] )
                                     .map{ it ->  [ it[0], it[1].flatten().sort().collect{ it.getName().replace("_peaks.frip.txt","") } , it[1].flatten().sort() ]}
-                                    .set { merge_replicate_macs2_broad_frip_collate_ch }
+                                    .set { merge_replicate_macs2_frip_collate_ch }
 
 // GENERATE PLOTS FOR FRIP SCORES ACROSS ALL SAMPLES
-process merge_replicate_macs2_broad_fripqc {
+process merge_replicate_macs2_fripqc {
 
    tag "$name"
 
-   publishDir "${params.outdir}/align/mergeReplicate/macs2/broadPeak/qc/", mode: 'copy'
+   publishDir "${params.outdir}/align/mergeReplicate/macs2/qc", mode: 'copy'
 
    input:
-   set val(name), val(sampleids), file(frips) from merge_replicate_macs2_broad_frip_collate_ch
+   set val(name), val(sampleids), file(frips) from merge_replicate_macs2_frip_collate_ch
 
    output:
-   file ("*.pdf") into merge_replicate_macs2_broad_fripqc_ch
+   file ("*.pdf") into merge_replicate_macs2_fripqc_ch
 
    script:
        """
@@ -967,23 +967,23 @@ process merge_replicate_macs2_broad_fripqc {
 }
 
 // GET LIST OF HOMER ANNOTATED FILES ACROSS ALL SAMPLES FOR QC PLOTS
-merge_replicate_macs2_broad_homer_ch.map{ it -> [ "macs2_homer_annotation", [it[1]] ]}
+merge_replicate_macs2_homer_ch.map{ it -> [ "macs2_homer_annotation", [it[1]] ]}
                                     .groupTuple( by: [0] )
                                     .map{ it ->  [ it[0], it[1].flatten().sort().collect{ it.getName().replace("_peaks.homer.annotatePeaks.txt","") } , it[1].flatten().sort() ]}
-                                    .set { merge_replicate_macs2_broad_homer_collate_ch}
+                                    .set { merge_replicate_macs2_homer_collate_ch}
 
 // GENERATE PLOTS FOR VARIOUS ASPECTS OF HOMER ANNOTATION ACROSS ALL SAMPLES
-process merge_replicate_macs2_broad_homerqc {
+process merge_replicate_macs2_homerqc {
 
    tag "$name"
 
-   publishDir "${params.outdir}/align/mergeReplicate/macs2/broadPeak/qc/", mode: 'copy'
+   publishDir "${params.outdir}/align/mergeReplicate/macs2/qc", mode: 'copy'
 
    input:
-   set val(name), val(sampleids), file(homers) from merge_replicate_macs2_broad_homer_collate_ch
+   set val(name), val(sampleids), file(homers) from merge_replicate_macs2_homer_collate_ch
 
    output:
-   file ("*.pdf") into merge_replicate_macs2_broad_homerqc_ch
+   file ("*.pdf") into merge_replicate_macs2_homerqc_ch
 
    script:
        """
@@ -992,23 +992,23 @@ process merge_replicate_macs2_broad_homerqc {
 }
 
 // GET LIST OF PEAK ACROSS ALL SAMPLES FOR MERGING
-merge_replicate_macs2_broad_merge_peaks_in_ch.map{ it -> [ "merged_peaks", [it[1]] ]}
+merge_replicate_macs2_merge_peaks_in_ch.map{ it -> [ "merged_peaks", [it[1]] ]}
                                              .groupTuple( by: [0] )
                                              .map{ it ->  [ it[0], it[1].flatten().sort().collect{ it.getName().replace("_peaks.broadPeak","") } , it[1].flatten().sort() ]}
-                                             .into { merge_replicate_macs2_broad_merge_peaks_in_ch;  merge_replicate_macs2_broad_peakqc_in_ch }
+                                             .into { merge_replicate_macs2_merge_peaks_in_ch;  merge_replicate_macs2_peakqc_in_ch }
 
 // GENERATE PLOTS FOR VARIOUS ASPECTS OF PEAKS ACROSS ALL SAMPLES
-process merge_replicate_macs2_broad_peakqc {
+process merge_replicate_macs2_peakqc {
 
    tag "$name"
 
-   publishDir "${params.outdir}/align/mergeReplicate/macs2/broadPeak/qc/", mode: 'copy'
+   publishDir "${params.outdir}/align/mergeReplicate/macs2/qc", mode: 'copy'
 
    input:
-   set val(name), val(sampleids), file(peaks) from merge_replicate_macs2_broad_peakqc_in_ch
+   set val(name), val(sampleids), file(peaks) from merge_replicate_macs2_peakqc_in_ch
 
    output:
-   file ("*.{txt,pdf}") into merge_replicate_macs2_broad_peakqc_ch
+   file ("*.{txt,pdf}") into merge_replicate_macs2_peakqc_ch
 
    script:
        """
@@ -1017,20 +1017,20 @@ process merge_replicate_macs2_broad_peakqc {
 }
 
 // MERGE PEAKS ACROSS ALL SAMPLES AND CREATE A BOOLEAN OUTPUT FILE TO AID FILTERING
-process merge_replicate_macs2_broad_merge_peaks {
+process merge_replicate_macs2_merge_peaks {
 
    tag "$name"
 
-   publishDir "${params.outdir}/align/mergeReplicate/macs2/broadPeak/merged_peaks/", mode: 'copy'
+   publishDir "${params.outdir}/align/mergeReplicate/macs2/merged_peaks", mode: 'copy'
 
    input:
-   set val(name), val(sampleids), file(peaks) from merge_replicate_macs2_broad_merge_peaks_in_ch
+   set val(name), val(sampleids), file(peaks) from merge_replicate_macs2_merge_peaks_in_ch
 
    output:
-   set val(name), file("*.boolean.txt") into merge_replicate_macs2_broad_merge_peaks_bool_ch
-   set val(name), file("*.bed") into merge_replicate_macs2_broad_merge_peaks_bed_ch
-   set val(name), file("*.saf") into merge_replicate_macs2_broad_merge_peaks_saf_ch
-   set val(name), file("*.log") into merge_replicate_macs2_broad_merge_peaks_log_ch
+   set val(name), file("*.boolean.txt") into merge_replicate_macs2_merge_peaks_bool_ch
+   set val(name), file("*.bed") into merge_replicate_macs2_merge_peaks_bed_ch
+   set val(name), file("*.saf") into merge_replicate_macs2_merge_peaks_saf_ch
+   set val(name), file("*.log") into merge_replicate_macs2_merge_peaks_log_ch
 
    script:
        """
@@ -1043,21 +1043,21 @@ process merge_replicate_macs2_broad_merge_peaks {
 }
 
 // ANNOTATE PEAKS USING HOMER ANNOTATE AND ADD ANNOTATION TO BOOLEAN OUTPUT FILE
-process merge_replicate_macs2_broad_merge_peaks_homer {
+process merge_replicate_macs2_merge_peaks_homer {
 
     tag "${name}"
 
-    publishDir "${params.outdir}/align/mergeReplicate/macs2/broadPeak/merged_peaks/", mode: 'copy'
+    publishDir "${params.outdir}/align/mergeReplicate/macs2/merged_peaks", mode: 'copy'
 
     input:
-    set val(name), file(bed) from merge_replicate_macs2_broad_merge_peaks_bed_ch
-    set val(name), file(bool) from merge_replicate_macs2_broad_merge_peaks_bool_ch
-    file fasta from fasta_merge_replicate_macs2_broad_merge_peaks_homer_ch.collect()
-    file gtf from gtf_merge_replicate_macs2_broad_merge_peaks_homer_ch.collect()
+    set val(name), file(bed) from merge_replicate_macs2_merge_peaks_bed_ch
+    set val(name), file(bool) from merge_replicate_macs2_merge_peaks_bool_ch
+    file fasta from fasta_merge_replicate_macs2_merge_peaks_homer_ch.collect()
+    file gtf from gtf_merge_replicate_macs2_merge_peaks_homer_ch.collect()
 
     output:
-    set val(name), file("*.annotatePeaks.txt") into merge_replicate_macs2_broad_merge_peaks_homer_ch
-    set val(name), file("*.annotatePeaks.sysout") into merge_replicate_macs2_broad_merge_peaks_homer_sysout_ch
+    set val(name), file("*.annotatePeaks.txt") into merge_replicate_macs2_merge_peaks_homer_ch
+    set val(name), file("*.annotatePeaks.sysout") into merge_replicate_macs2_merge_peaks_homer_sysout_ch
 
     script:
         """
@@ -1068,26 +1068,26 @@ process merge_replicate_macs2_broad_merge_peaks_homer {
 }
 
 // GET LIST OF REPLICATE LEVEL BAM FILES
-merge_replicate_name_bam_merge_replicate_broad_featurecounts_ch.map{ it -> [ "merged_bam", [it[1]] ]}
+merge_replicate_name_bam_merge_replicate_featurecounts_ch.map{ it -> [ "merged_bam", [it[1]] ]}
                                                                .groupTuple( by: [0] )
                                                                .map{ it ->  [ it[1].flatten().sort().collect{ it.getName().replace(".mRp.rmD.bam","") } , it[1].flatten().sort() ]}
-                                                               .set { merge_replicate_name_bam_merge_replicate_broad_featurecounts_ch }
+                                                               .set { merge_replicate_name_bam_merge_replicate_featurecounts_ch }
 
-process merge_replicate_macs2_broad_merge_peaks_featurecounts {
+process merge_replicate_macs2_merge_peaks_featurecounts {
 
     tag "${name}"
 
     label 'highcpu'
 
-    publishDir "${params.outdir}/align/mergeReplicate/macs2/broadPeak/merged_peaks/", mode: 'copy'
+    publishDir "${params.outdir}/align/mergeReplicate/macs2/merged_peaks", mode: 'copy'
 
     input:
-    set val (sampleids), file(bams) from merge_replicate_name_bam_merge_replicate_broad_featurecounts_ch
-    set val(name), file(saf) from merge_replicate_macs2_broad_merge_peaks_saf_ch.collect()
+    set val (sampleids), file(bams) from merge_replicate_name_bam_merge_replicate_featurecounts_ch
+    set val(name), file(saf) from merge_replicate_macs2_merge_peaks_saf_ch.collect()
 
     output:
-    set val(name), file("*.featureCounts.txt") into merge_replicate_macs2_broad_merge_peaks_featurecounts_ch
-    set val(name), file("*.featureCounts.sysout") into merge_replicate_macs2_broad_merge_peaks_featurecounts_sysout_ch
+    set val(name), file("*.featureCounts.txt") into merge_replicate_macs2_merge_peaks_featurecounts_ch
+    set val(name), file("*.featureCounts.sysout") into merge_replicate_macs2_merge_peaks_featurecounts_sysout_ch
 
     script:
         """
@@ -1095,267 +1095,23 @@ process merge_replicate_macs2_broad_merge_peaks_featurecounts {
         """
 }
 
-process merge_replicate_macs2_broad_merge_peaks_differential {
+process merge_replicate_macs2_merge_peaks_differential {
 
     tag "${name}"
 
-    publishDir "${params.outdir}/align/mergeReplicate/macs2/broadPeak/merged_peaks/", mode: 'copy'
+    publishDir "${params.outdir}/align/mergeReplicate/macs2/merged_peaks", mode: 'copy'
 
     input:
-    set val(name), file(counts) from merge_replicate_macs2_broad_merge_peaks_featurecounts_ch
+    set val(name), file(counts) from merge_replicate_macs2_merge_peaks_featurecounts_ch
 
     output:
-    set val(name), file("deseq2/*") into merge_replicate_macs2_broad_merge_peaks_differential_ch
-    file "*.txt" into merge_replicate_macs2_broad_merge_peaks_differential_complete_ch
+    set val(name), file("deseq2/*") into merge_replicate_macs2_merge_peaks_differential_ch
+    file "*.txt" into merge_replicate_macs2_merge_peaks_differential_complete_ch
 
     script:
         """
         Rscript $baseDir/bin/featurecounts_deseq2.R -i ${counts} -b '.mRp.rmD.bam' -o ./deseq2 -p ${name}
-        touch merge_replicate_macs2_broad_merge_peaks_differential.complete.txt
-        """
-}
-
-////////////////////////////////////////////////////
-/* --          MACS2 NARROW                    -- */
-////////////////////////////////////////////////////
-
-// CALL NARROW PEAKS USING MACS2
-process merge_replicate_macs2_narrow {
-
-    tag "$sampleid"
-
-    publishDir "${params.outdir}/align/mergeReplicate/macs2/narrowPeak", mode: 'copy'
-
-    input:
-    set val(sampleid), file(bam) from merge_replicate_rmdup_macs2_narrow_ch
-
-    output:
-    set val(sampleid), file("*/*.narrowPeak") into merge_replicate_macs2_narrow_homer_in_ch, merge_replicate_macs2_narrow_frip_in_ch, merge_replicate_macs2_narrow_merge_peaks_in_ch
-    set val(sampleid), file("*/*.{gappedPeak,xls}") into merge_replicate_macs2_narrow_output_ch
-    set val(sampleid), file("*/*.sysout") into merge_replicate_macs2_narrow_sysout_ch
-
-    script:
-        """
-        mkdir -p ${sampleid}
-        macs2 callpeak --verbose=2 -t ${bam[0]} --gsize=${params.macs_genome_size} --outdir=${sampleid} --name=${sampleid} --format BAMPE --keep-dup all --nomodel >> ${sampleid}/${sampleid}.macs2.sysout 2>&1
-        """
-}
-
-// ANNOTATE PEAKS USING HOMER ANNOTATEPEAKS
-process merge_replicate_macs2_narrow_homer {
-
-    tag "$sampleid"
-
-    publishDir "${params.outdir}/align/mergeReplicate/macs2/narrowPeak", mode: 'copy'
-
-    input:
-    set val(sampleid), file(peak) from merge_replicate_macs2_narrow_homer_in_ch
-    file fasta from fasta_merge_replicate_macs2_narrow_homer_ch.collect()
-    file gtf from gtf_merge_replicate_macs2_narrow_homer_ch.collect()
-
-    output:
-    set val(sampleid), file("*/*.annotatePeaks.txt") into merge_replicate_macs2_narrow_homer_ch
-    set val(sampleid), file("*/*.annotatePeaks.sysout") into merge_replicate_macs2_narrow_homer_sysout_ch
-
-    script:
-        """
-        mkdir -p ${sampleid}
-        annotatePeaks.pl ${peak} ${fasta} -gid -gtf ${gtf} > ${sampleid}/${sampleid}_peaks.homer.annotatePeaks.txt 2> ${sampleid}/${sampleid}_peaks.homer.annotatePeaks.sysout
-        """
-}
-
-// CALCULATE FRIP SCORE USING BEDTOOLS
-process merge_replicate_macs2_narrow_frip {
-
-    tag "$sampleid"
-
-    publishDir "${params.outdir}/align/mergeReplicate/macs2/narrowPeak", mode: 'copy'
-
-    input:
-    set val(sampleid), file(peak), file(bam), file(flagstat) from merge_replicate_macs2_narrow_frip_in_ch.join(merge_replicate_rmdup_macs2_narrow_frip_ch, by: [0]).join(merge_replicate_rmdup_flagstat_macs2_narrow_frip_ch, by: [0])
-
-    output:
-    set val(sampleid), file("*/*.frip.txt") into merge_replicate_macs2_narrow_frip_ch
-
-    script:
-        """
-        mkdir -p ${sampleid}
-        READS_IN_PEAKS=\$(intersectBed -a ${bam[0]} -b ${peak} -bed -c -f 0.20 | awk -F '\t' '{sum += \$NF} END {print sum}')
-        grep 'mapped (' ${flagstat} | awk -v a="\$READS_IN_PEAKS" '{print a/\$1}' > ${sampleid}/${sampleid}_peaks.frip.txt
-        """
-}
-
-// GET LIST OF FRIP FILES ACROSS ALL SAMPLES FOR QC PLOT
-merge_replicate_macs2_narrow_frip_ch.map{ it -> [ "macs2_frip", [it[1]] ]}
-                                    .groupTuple( by: [0] )
-                                    .map{ it ->  [ it[0], it[1].flatten().sort().collect{ it.getName().replace("_peaks.frip.txt","") } , it[1].flatten().sort() ]}
-                                    .set { merge_replicate_macs2_narrow_frip_collate_ch }
-
-// GENERATE PLOTS FOR FRIP SCORES ACROSS ALL SAMPLES
-process merge_replicate_macs2_narrow_fripqc {
-
-   tag "$name"
-
-   publishDir "${params.outdir}/align/mergeReplicate/macs2/narrowPeak/qc/", mode: 'copy'
-
-   input:
-   set val(name), val(sampleids), file(frips) from merge_replicate_macs2_narrow_frip_collate_ch
-
-   output:
-   file ("*.pdf") into merge_replicate_macs2_narrow_fripqc_ch
-
-   script:
-       """
-       Rscript $baseDir/bin/plot_frip.R -i ${frips.join(',')} -s ${sampleids.join(',')} -o ./ -p ${name}
-       """
-}
-
-// GET LIST OF HOMER ANNOTATED FILES ACROSS ALL SAMPLES FOR QC PLOTS
-merge_replicate_macs2_narrow_homer_ch.map{ it -> [ "macs2_homer_annotation", [it[1]] ]}
-                                     .groupTuple( by: [0] )
-                                     .map{ it ->  [ it[0], it[1].flatten().sort().collect{ it.getName().replace("_peaks.homer.annotatePeaks.txt","") } , it[1].flatten().sort() ]}
-                                     .set { merge_replicate_macs2_narrow_homer_collate_ch}
-
-// GENERATE PLOTS FOR VARIOUS ASPECTS OF HOMER ANNOTATION ACROSS ALL SAMPLES
-process merge_replicate_macs2_narrow_homerqc {
-
-   tag "$name"
-
-   publishDir "${params.outdir}/align/mergeReplicate/macs2/narrowPeak/qc/", mode: 'copy'
-
-   input:
-   set val(name), val(sampleids), file(homers) from merge_replicate_macs2_narrow_homer_collate_ch
-
-   output:
-   file ("*.pdf") into merge_replicate_macs2_narrow_homerqc_ch
-
-   script:
-       """
-       Rscript $baseDir/bin/homer_plot_annotation.R -i ${homers.join(',')} -s ${sampleids.join(',')} -o ./ -p ${name}
-       """
-}
-
-// GET LIST OF PEAK ACROSS ALL SAMPLES FOR MERGING
-merge_replicate_macs2_narrow_merge_peaks_in_ch.map{ it -> [ "merged_peaks", [it[1]] ]}
-                                             .groupTuple( by: [0] )
-                                             .map{ it ->  [ it[0], it[1].flatten().sort().collect{ it.getName().replace("_peaks.narrowPeak","") } , it[1].flatten().sort() ]}
-                                             .into { merge_replicate_macs2_narrow_merge_peaks_in_ch; merge_replicate_macs2_narrow_peakqc_in_ch }
-
-// GENERATE PLOTS FOR VARIOUS ASPECTS OF PEAKS ACROSS ALL SAMPLES
-process merge_replicate_macs2_narrow_peakqc {
-
-   tag "$name"
-
-   publishDir "${params.outdir}/align/mergeReplicate/macs2/narrowPeak/qc/", mode: 'copy'
-
-   input:
-   set val(name), val(sampleids), file(peaks) from merge_replicate_macs2_narrow_peakqc_in_ch
-
-   output:
-   file ("*.{txt,pdf}") into merge_replicate_macs2_narrow_peakqc_ch
-
-   script:
-       """
-       Rscript $baseDir/bin/macs2_peakqc.R -i ${peaks.join(',')} -s ${sampleids.join(',')} -o ./ -p macs2_peakqc
-       """
-}
-
-// MERGE PEAKS ACROSS ALL SAMPLES AND CREATE A BOOLEAN OUTPUT FILE TO AID FILTERING
-process merge_replicate_macs2_narrow_merge_peaks {
-
-   tag "$name"
-
-   publishDir "${params.outdir}/align/mergeReplicate/macs2/narrowPeak/merged_peaks/", mode: 'copy'
-
-   input:
-   set val(name), val(sampleids), file(peaks) from merge_replicate_macs2_narrow_merge_peaks_in_ch
-
-   output:
-   set val(name), file("*.boolean.txt") into merge_replicate_macs2_narrow_merge_peaks_bool_ch
-   set val(name), file("*.bed") into merge_replicate_macs2_narrow_merge_peaks_bed_ch
-   set val(name), file("*.saf") into merge_replicate_macs2_narrow_merge_peaks_saf_ch
-   set val(name), file("*.log") into merge_replicate_macs2_narrow_merge_peaks_log_ch
-
-   script:
-       """
-       sort -k1,1 -k2,2n ${peaks.join(' ')} | mergeBed -c 2,3,4,5,6,7,8,9,10 -o collapse,collapse,collapse,collapse,collapse,collapse,collapse,collapse,collapse > ${name}.txt
-       python $baseDir/bin/expand_merged_macs.py ${name}.txt ${sampleids.join(',')} ${name}.boolean.txt --min_samples 1  --is_narrow
-       awk -v FS='\t' -v OFS='\t' 'FNR > 1 { print \$1, \$2, \$3, \$4, "0", "+" }' ${name}.boolean.txt > ${name}.bed
-       echo -e "GeneID\tChr\tStart\tEnd\tStrand" > ${name}.saf
-       awk -v FS='\t' -v OFS='\t' 'FNR > 1 { print \$4, \$1, \$2, \$3,  "+" }' ${name}.boolean.txt >> ${name}.saf
-       """
-}
-
-// ANNOTATE PEAKS USING HOMER ANNOTATE AND ADD ANNOTATION TO BOOLEAN OUTPUT FILE
-process merge_replicate_macs2_narrow_merge_peaks_homer {
-
-    tag "${name}"
-
-    publishDir "${params.outdir}/align/mergeReplicate/macs2/narrowPeak/merged_peaks/", mode: 'copy'
-
-    input:
-    set val(name), file(bed) from merge_replicate_macs2_narrow_merge_peaks_bed_ch
-    set val(name), file(bool) from merge_replicate_macs2_narrow_merge_peaks_bool_ch
-    file fasta from fasta_merge_replicate_macs2_narrow_merge_peaks_homer_ch.collect()
-    file gtf from gtf_merge_replicate_macs2_narrow_merge_peaks_homer_ch.collect()
-
-    output:
-    set val(name), file("*.annotatePeaks.txt") into merge_replicate_macs2_narrow_merge_peaks_homer_ch
-    set val(name), file("*.annotatePeaks.sysout") into merge_replicate_macs2_narrow_merge_peaks_homer_sysout_ch
-
-    script:
-        """
-        annotatePeaks.pl ${bed} ${fasta} -gid -gtf ${gtf} > ${name}.homer.annotatePeaks.txt 2> ${name}.homer.annotatePeaks.sysout
-        cut -f2- ${name}.homer.annotatePeaks.txt | awk 'NR==1; NR > 1 {print \$0 | "sort -k1,1 -k2,2n"}' | cut -f6- > tmp.txt
-        paste ${bool} tmp.txt > ${bool.toString().replace(".txt","")}.homer.annotatePeaks.txt
-        """
-}
-
-// GET LIST OF REPLICATE LEVEL BAM FILES
-merge_replicate_name_bam_merge_replicate_narrow_featurecounts_ch.map{ it -> [ "merged_bam", [it[1]] ]}
-                                                               .groupTuple( by: [0] )
-                                                               .map{ it ->  [ it[1].flatten().sort().collect{ it.getName().replace(".mRp.rmD.bam","") } , it[1].flatten().sort() ]}
-                                                               .set { merge_replicate_name_bam_merge_replicate_narrow_featurecounts_ch }
-
-process merge_replicate_macs2_narrow_merge_peaks_featurecounts {
-
-    tag "${name}"
-
-    label 'highcpu'
-
-    publishDir "${params.outdir}/align/mergeReplicate/macs2/narrowPeak/merged_peaks/", mode: 'copy'
-
-    input:
-    set val (sampleids), file(bams) from merge_replicate_name_bam_merge_replicate_narrow_featurecounts_ch
-    set val(name), file(saf) from merge_replicate_macs2_narrow_merge_peaks_saf_ch.collect()
-
-    output:
-    set val(name), file("*.featureCounts.txt") into merge_replicate_macs2_narrow_merge_peaks_featurecounts_ch
-    set val(name), file("*.featureCounts.sysout") into merge_replicate_macs2_narrow_merge_peaks_featurecounts_sysout_ch
-
-    script:
-        """
-        featureCounts -F SAF -O -T ${task.cpus} --fracOverlap 0.5 --primary --ignoreDup -p -B -C --donotsort -a ${saf} -o ${name}.replicate.featureCounts.txt ${bams.join(' ')} >> ${name}.replicate.featureCounts.sysout 2>&1
-        """
-}
-
-process merge_replicate_macs2_narrow_merge_peaks_differential {
-
-    tag "${name}"
-
-    publishDir "${params.outdir}/align/mergeReplicate/macs2/narrowPeak/merged_peaks/", mode: 'copy'
-
-    input:
-    set val(name), file(counts) from merge_replicate_macs2_narrow_merge_peaks_featurecounts_ch
-
-    output:
-    set val(name), file("deseq2/*") into merge_replicate_macs2_narrow_merge_peaks_differential_ch
-    file "*.txt" into merge_replicate_macs2_narrow_merge_peaks_differential_complete_ch
-
-    script:
-        """
-        Rscript $baseDir/bin/featurecounts_deseq2.R -i ${counts} -b '.mRp.rmD.bam' -o ./deseq2 -p ${name}
-        touch merge_replicate_macs2_narrow_merge_peaks_differential.complete.txt
+        touch merge_replicate_macs2_merge_peaks_differential.complete.txt
         """
 }
 
@@ -1476,8 +1232,8 @@ process merge_sample_rmdup {
     set val(sampleid), file(orphan_bams), file(markdup_bam) from rm_orphan_sort_bam_sample_rmdup_ch.join(merge_sample_markdup_ch, by: [0])
 
     output:
-    set val(sampleid), file("*.{bam,bam.bai}") into merge_sample_rmdup_bedgraph_ch, merge_sample_rmdup_macs2_broad_ch, merge_sample_rmdup_macs2_broad_frip_ch, merge_sample_rmdup_macs2_narrow_ch, merge_sample_rmdup_macs2_narrow_frip_ch
-    set val(sampleid), file("*.flagstat") into merge_sample_rmdup_flagstat_ch, merge_sample_rmdup_flagstat_bedgraph_ch, merge_sample_rmdup_flagstat_macs2_broad_frip_ch, merge_sample_rmdup_flagstat_macs2_narrow_frip_ch
+    set val(sampleid), file("*.{bam,bam.bai}") into merge_sample_rmdup_bedgraph_ch, merge_sample_rmdup_macs2_ch, merge_sample_rmdup_macs2_frip_ch
+    set val(sampleid), file("*.flagstat") into merge_sample_rmdup_flagstat_ch, merge_sample_rmdup_flagstat_bedgraph_ch, merge_sample_rmdup_flagstat_macs2_frip_ch
 
     script:
         out_prefix="${sampleid}.mSm.rmD"
@@ -1515,7 +1271,7 @@ process merge_sample_bedgraph {
 
     tag "$sampleid"
 
-    publishDir "${params.outdir}/align/mergeSample/bigwig/", mode: 'copy',
+    publishDir "${params.outdir}/align/mergeSample/bigwig", mode: 'copy',
                 saveAs: {filename ->
                             if (filename.endsWith(".txt")) "scale_factor/$filename"
                             else null
@@ -1564,19 +1320,19 @@ process merge_sample_bigwig {
 ////////////////////////////////////////////////////
 
 // CALL BROAD PEAKS USING MACS2
-process merge_sample_macs2_broad {
+process merge_sample_macs2 {
 
     tag "$sampleid"
 
-    publishDir "${params.outdir}/align/mergeSample/macs2/broadPeak", mode: 'copy'
+    publishDir "${params.outdir}/align/mergeSample/macs2", mode: 'copy'
 
     input:
-    set val(sampleid), file(bam) from merge_sample_rmdup_macs2_broad_ch
+    set val(sampleid), file(bam) from merge_sample_rmdup_macs2_ch
 
     output:
-    set val(sampleid), file("*/*.broadPeak") into merge_sample_macs2_broad_homer_in_ch, merge_sample_macs2_broad_frip_in_ch, merge_sample_macs2_broad_merge_peaks_in_ch
-    set val(sampleid), file("*/*.{gappedPeak,xls}") into merge_sample_macs2_broad_output_ch
-    set val(sampleid), file("*/*.sysout") into merge_sample_macs2_broad_sysout_ch
+    set val(sampleid), file("*/*.broadPeak") into merge_sample_macs2_homer_in_ch, merge_sample_macs2_frip_in_ch, merge_sample_macs2_merge_peaks_in_ch
+    set val(sampleid), file("*/*.{gappedPeak,xls}") into merge_sample_macs2_output_ch
+    set val(sampleid), file("*/*.sysout") into merge_sample_macs2_sysout_ch
 
     script:
         """
@@ -1586,20 +1342,20 @@ process merge_sample_macs2_broad {
 }
 
 // ANNOTATE PEAKS USING HOMER ANNOTATEPEAKS
-process merge_sample_macs2_broad_homer {
+process merge_sample_macs2_homer {
 
     tag "$sampleid"
 
-    publishDir "${params.outdir}/align/mergeSample/macs2/broadPeak", mode: 'copy'
+    publishDir "${params.outdir}/align/mergeSample/macs2", mode: 'copy'
 
     input:
-    set val(sampleid), file(peak) from merge_sample_macs2_broad_homer_in_ch
-    file fasta from fasta_merge_sample_macs2_broad_homer_ch.collect()
-    file gtf from gtf_merge_sample_macs2_broad_homer_ch.collect()
+    set val(sampleid), file(peak) from merge_sample_macs2_homer_in_ch
+    file fasta from fasta_merge_sample_macs2_homer_ch.collect()
+    file gtf from gtf_merge_sample_macs2_homer_ch.collect()
 
     output:
-    set val(sampleid), file("*/*.annotatePeaks.txt") into merge_sample_macs2_broad_homer_ch
-    set val(sampleid), file("*/*.annotatePeaks.sysout") into merge_sample_macs2_broad_homer_sysout_ch
+    set val(sampleid), file("*/*.annotatePeaks.txt") into merge_sample_macs2_homer_ch
+    set val(sampleid), file("*/*.annotatePeaks.sysout") into merge_sample_macs2_homer_sysout_ch
 
     script:
         """
@@ -1609,17 +1365,17 @@ process merge_sample_macs2_broad_homer {
 }
 
 // CALCULATE FRIP SCORE USING BEDTOOLS
-process merge_sample_macs2_broad_frip {
+process merge_sample_macs2_frip {
 
     tag "$sampleid"
 
-    publishDir "${params.outdir}/align/mergeSample/macs2/broadPeak", mode: 'copy'
+    publishDir "${params.outdir}/align/mergeSample/macs2", mode: 'copy'
 
     input:
-    set val(sampleid), file(peak), file(bam), file(flagstat) from merge_sample_macs2_broad_frip_in_ch.join(merge_sample_rmdup_macs2_broad_frip_ch, by: [0]).join(merge_sample_rmdup_flagstat_macs2_broad_frip_ch, by: [0])
+    set val(sampleid), file(peak), file(bam), file(flagstat) from merge_sample_macs2_frip_in_ch.join(merge_sample_rmdup_macs2_frip_ch, by: [0]).join(merge_sample_rmdup_flagstat_macs2_frip_ch, by: [0])
 
     output:
-    set val(sampleid), file("*/*.frip.txt") into merge_sample_macs2_broad_frip_ch
+    set val(sampleid), file("*/*.frip.txt") into merge_sample_macs2_frip_ch
 
     script:
         """
@@ -1630,23 +1386,23 @@ process merge_sample_macs2_broad_frip {
 }
 
 // GET LIST OF FRIP FILES ACROSS ALL SAMPLES FOR QC PLOT
-merge_sample_macs2_broad_frip_ch.map{ it -> [ "macs2_frip", [it[1]] ]}
+merge_sample_macs2_frip_ch.map{ it -> [ "macs2_frip", [it[1]] ]}
                                     .groupTuple( by: [0] )
                                     .map{ it ->  [ it[0], it[1].flatten().sort().collect{ it.getName().replace("_peaks.frip.txt","") } , it[1].flatten().sort() ]}
-                                    .set { merge_sample_macs2_broad_frip_collate_ch }
+                                    .set { merge_sample_macs2_frip_collate_ch }
 
 // GENERATE PLOTS FOR FRIP SCORES ACROSS ALL SAMPLES
-process merge_sample_macs2_broad_fripqc {
+process merge_sample_macs2_fripqc {
 
    tag "$name"
 
-   publishDir "${params.outdir}/align/mergeSample/macs2/broadPeak/qc/", mode: 'copy'
+   publishDir "${params.outdir}/align/mergeSample/macs2/qc", mode: 'copy'
 
    input:
-   set val(name), val(sampleids), file(frips) from merge_sample_macs2_broad_frip_collate_ch
+   set val(name), val(sampleids), file(frips) from merge_sample_macs2_frip_collate_ch
 
    output:
-   file ("*.pdf") into merge_sample_macs2_broad_fripqc_ch
+   file ("*.pdf") into merge_sample_macs2_fripqc_ch
 
    script:
        """
@@ -1655,23 +1411,23 @@ process merge_sample_macs2_broad_fripqc {
 }
 
 // GET LIST OF HOMER ANNOTATED FILES ACROSS ALL SAMPLES FOR QC PLOTS
-merge_sample_macs2_broad_homer_ch.map{ it -> [ "macs2_homer_annotation", [it[1]] ]}
+merge_sample_macs2_homer_ch.map{ it -> [ "macs2_homer_annotation", [it[1]] ]}
                                  .groupTuple( by: [0] )
                                  .map{ it ->  [ it[0], it[1].flatten().sort().collect{ it.getName().replace("_peaks.homer.annotatePeaks.txt","") } , it[1].flatten().sort() ]}
-                                 .set { merge_sample_macs2_broad_homer_collate_ch}
+                                 .set { merge_sample_macs2_homer_collate_ch}
 
 // GENERATE PLOTS FOR VARIOUS ASPECTS OF HOMER ANNOTATION ACROSS ALL SAMPLES
-process merge_sample_macs2_broad_homerqc {
+process merge_sample_macs2_homerqc {
 
    tag "$name"
 
-   publishDir "${params.outdir}/align/mergeSample/macs2/broadPeak/qc/", mode: 'copy'
+   publishDir "${params.outdir}/align/mergeSample/macs2/qc", mode: 'copy'
 
    input:
-   set val(name), val(sampleids), file(homers) from merge_sample_macs2_broad_homer_collate_ch
+   set val(name), val(sampleids), file(homers) from merge_sample_macs2_homer_collate_ch
 
    output:
-   file ("*.pdf") into merge_sample_macs2_broad_homerqc_ch
+   file ("*.pdf") into merge_sample_macs2_homerqc_ch
 
    script:
        """
@@ -1680,23 +1436,23 @@ process merge_sample_macs2_broad_homerqc {
 }
 
 // GET LIST OF PEAK ACROSS ALL SAMPLES FOR MERGING
-merge_sample_macs2_broad_merge_peaks_in_ch.map{ it -> [ "merged_peaks", [it[1]] ]}
+merge_sample_macs2_merge_peaks_in_ch.map{ it -> [ "merged_peaks", [it[1]] ]}
                                              .groupTuple( by: [0] )
                                              .map{ it ->  [ it[0], it[1].flatten().sort().collect{ it.getName().replace("_peaks.broadPeak","") } , it[1].flatten().sort() ]}
-                                             .into { merge_sample_macs2_broad_merge_peaks_in_ch; merge_sample_macs2_broad_peakqc_in_ch }
+                                             .into { merge_sample_macs2_merge_peaks_in_ch; merge_sample_macs2_peakqc_in_ch }
 
 // GENERATE PLOTS FOR VARIOUS ASPECTS OF PEAKS ACROSS ALL SAMPLES
-process merge_sample_macs2_broad_peakqc {
+process merge_sample_macs2_peakqc {
 
    tag "$name"
 
-   publishDir "${params.outdir}/align/mergeSample/macs2/broadPeak/qc/", mode: 'copy'
+   publishDir "${params.outdir}/align/mergeSample/macs2/qc", mode: 'copy'
 
    input:
-   set val(name), val(sampleids), file(peaks) from merge_sample_macs2_broad_peakqc_in_ch
+   set val(name), val(sampleids), file(peaks) from merge_sample_macs2_peakqc_in_ch
 
    output:
-   file ("*.{txt,pdf}") into merge_sample_macs2_broad_peakqc_ch
+   file ("*.{txt,pdf}") into merge_sample_macs2_peakqc_ch
 
    script:
        """
@@ -1705,20 +1461,20 @@ process merge_sample_macs2_broad_peakqc {
 }
 
 // MERGE PEAKS ACROSS ALL SAMPLES AND CREATE A BOOLEAN OUTPUT FILE TO AID FILTERING
-process merge_sample_macs2_broad_merge_peaks {
+process merge_sample_macs2_merge_peaks {
 
    tag "$name"
 
-   publishDir "${params.outdir}/align/mergeSample/macs2/broadPeak/merged_peaks/", mode: 'copy'
+   publishDir "${params.outdir}/align/mergeSample/macs2/merged_peaks", mode: 'copy'
 
    input:
-   set val(name), val(sampleids), file(peaks) from merge_sample_macs2_broad_merge_peaks_in_ch
+   set val(name), val(sampleids), file(peaks) from merge_sample_macs2_merge_peaks_in_ch
 
    output:
-   set val(name), file("*.boolean.txt") into merge_sample_macs2_broad_merge_peaks_bool_ch
-   set val(name), file("*.bed") into merge_sample_macs2_broad_merge_peaks_bed_ch
-   set val(name), file("*.saf") into merge_sample_macs2_broad_merge_peaks_saf_ch
-   set val(name), file("*.log") into merge_sample_macs2_broad_merge_peaks_log_ch
+   set val(name), file("*.boolean.txt") into merge_sample_macs2_merge_peaks_bool_ch
+   set val(name), file("*.bed") into merge_sample_macs2_merge_peaks_bed_ch
+   set val(name), file("*.saf") into merge_sample_macs2_merge_peaks_saf_ch
+   set val(name), file("*.log") into merge_sample_macs2_merge_peaks_log_ch
 
    script:
        """
@@ -1731,21 +1487,21 @@ process merge_sample_macs2_broad_merge_peaks {
 }
 
 // ANNOTATE PEAKS USING HOMER ANNOTATE AND ADD ANNOTATION TO BOOLEAN OUTPUT FILE
-process merge_sample_macs2_broad_merge_peaks_homer {
+process merge_sample_macs2_merge_peaks_homer {
 
     tag "${name}"
 
-    publishDir "${params.outdir}/align/mergeSample/macs2/broadPeak/merged_peaks/", mode: 'copy'
+    publishDir "${params.outdir}/align/mergeSample/macs2/merged_peaks", mode: 'copy'
 
     input:
-    set val(name), file(bed) from merge_sample_macs2_broad_merge_peaks_bed_ch
-    set val(name), file(bool) from merge_sample_macs2_broad_merge_peaks_bool_ch
-    file fasta from fasta_merge_sample_macs2_broad_merge_peaks_homer_ch.collect()
-    file gtf from gtf_merge_sample_macs2_broad_merge_peaks_homer_ch.collect()
+    set val(name), file(bed) from merge_sample_macs2_merge_peaks_bed_ch
+    set val(name), file(bool) from merge_sample_macs2_merge_peaks_bool_ch
+    file fasta from fasta_merge_sample_macs2_merge_peaks_homer_ch.collect()
+    file gtf from gtf_merge_sample_macs2_merge_peaks_homer_ch.collect()
 
     output:
-    set val(name), file("*.annotatePeaks.txt") into merge_sample_macs2_broad_merge_peaks_homer_ch
-    set val(name), file("*.annotatePeaks.sysout") into merge_sample_macs2_broad_merge_peaks_homer_sysout_ch
+    set val(name), file("*.annotatePeaks.txt") into merge_sample_macs2_merge_peaks_homer_ch
+    set val(name), file("*.annotatePeaks.sysout") into merge_sample_macs2_merge_peaks_homer_sysout_ch
 
     script:
         """
@@ -1756,26 +1512,26 @@ process merge_sample_macs2_broad_merge_peaks_homer {
 }
 
 // GET LIST OF REPLICATE LEVEL BAM FILES
-merge_replicate_name_bam_merge_sample_broad_featurecounts_ch.map{ it -> [ "merged_bam", [it[1]] ]}
+merge_replicate_name_bam_merge_sample_featurecounts_ch.map{ it -> [ "merged_bam", [it[1]] ]}
                                                                .groupTuple( by: [0] )
                                                                .map{ it ->  [ it[1].flatten().sort().collect{ it.getName().replace(".mRp.rmD.bam","") } , it[1].flatten().sort() ]}
-                                                               .set { merge_replicate_name_bam_merge_sample_broad_featurecounts_ch }
+                                                               .set { merge_replicate_name_bam_merge_sample_featurecounts_ch }
 
-process merge_sample_macs2_broad_merge_peaks_featurecounts {
+process merge_sample_macs2_merge_peaks_featurecounts {
 
     tag "${name}"
 
     label 'highcpu'
 
-    publishDir "${params.outdir}/align/mergeSample/macs2/broadPeak/merged_peaks/", mode: 'copy'
+    publishDir "${params.outdir}/align/mergeSample/macs2/merged_peaks", mode: 'copy'
 
     input:
-    set val (sampleids), file(bams) from merge_replicate_name_bam_merge_sample_broad_featurecounts_ch
-    set val(name), file(saf) from merge_sample_macs2_broad_merge_peaks_saf_ch.collect()
+    set val (sampleids), file(bams) from merge_replicate_name_bam_merge_sample_featurecounts_ch
+    set val(name), file(saf) from merge_sample_macs2_merge_peaks_saf_ch.collect()
 
     output:
-    set val(name), file("*.featureCounts.txt") into merge_sample_macs2_broad_merge_peaks_featurecounts_ch
-    set val(name), file("*.featureCounts.sysout") into merge_sample_macs2_broad_merge_peaks_featurecounts_sysout_ch
+    set val(name), file("*.featureCounts.txt") into merge_sample_macs2_merge_peaks_featurecounts_ch
+    set val(name), file("*.featureCounts.sysout") into merge_sample_macs2_merge_peaks_featurecounts_sysout_ch
 
     script:
         """
@@ -1783,267 +1539,23 @@ process merge_sample_macs2_broad_merge_peaks_featurecounts {
         """
 }
 
-process merge_sample_macs2_broad_merge_peaks_differential {
+process merge_sample_macs2_merge_peaks_differential {
 
     tag "${name}"
 
-    publishDir "${params.outdir}/align/mergeSample/macs2/broadPeak/merged_peaks/", mode: 'copy'
+    publishDir "${params.outdir}/align/mergeSample/macs2/merged_peaks", mode: 'copy'
 
     input:
-    set val(name), file(counts) from merge_sample_macs2_broad_merge_peaks_featurecounts_ch
+    set val(name), file(counts) from merge_sample_macs2_merge_peaks_featurecounts_ch
 
     output:
-    set val(name), file("deseq2/*") into merge_sample_macs2_broad_merge_peaks_differential_ch
-    file "*.txt" into merge_sample_macs2_broad_merge_peaks_differential_complete_ch
+    set val(name), file("deseq2/*") into merge_sample_macs2_merge_peaks_differential_ch
+    file "*.txt" into merge_sample_macs2_merge_peaks_differential_complete_ch
 
     script:
         """
         Rscript $baseDir/bin/featurecounts_deseq2.R -i ${counts} -b '.mRp.rmD.bam' -o ./deseq2 -p ${name}
-        touch merge_sample_macs2_broad_merge_peaks_differential.complete.txt
-        """
-}
-
-////////////////////////////////////////////////////
-/* --          MACS2 NARROW                    -- */
-////////////////////////////////////////////////////
-
-// CALL NARROW PEAKS USING MACS2
-process merge_sample_macs2_narrow {
-
-    tag "$sampleid"
-
-    publishDir "${params.outdir}/align/mergeSample/macs2/narrowPeak", mode: 'copy'
-
-    input:
-    set val(sampleid), file(bam) from merge_sample_rmdup_macs2_narrow_ch
-
-    output:
-    set val(sampleid), file("*/*.narrowPeak") into merge_sample_macs2_narrow_homer_in_ch, merge_sample_macs2_narrow_frip_in_ch, merge_sample_macs2_narrow_merge_peaks_in_ch
-    set val(sampleid), file("*/*.{gappedPeak,xls}") into merge_sample_macs2_narrow_output_ch
-    set val(sampleid), file("*/*.sysout") into merge_sample_macs2_narrow_sysout_ch
-
-    script:
-        """
-        mkdir -p ${sampleid}
-        macs2 callpeak --verbose=2 -t ${bam[0]} --gsize=${params.macs_genome_size} --outdir=${sampleid} --name=${sampleid} --format BAMPE --keep-dup all --nomodel >> ${sampleid}/${sampleid}.macs2.sysout 2>&1
-        """
-}
-
-// ANNOTATE PEAKS USING HOMER ANNOTATEPEAKS
-process merge_sample_macs2_narrow_homer {
-
-    tag "$sampleid"
-
-    publishDir "${params.outdir}/align/mergeSample/macs2/narrowPeak", mode: 'copy'
-
-    input:
-    set val(sampleid), file(peak) from merge_sample_macs2_narrow_homer_in_ch
-    file fasta from fasta_merge_sample_macs2_narrow_homer_ch.collect()
-    file gtf from gtf_merge_sample_macs2_narrow_homer_ch.collect()
-
-    output:
-    set val(sampleid), file("*/*.annotatePeaks.txt") into merge_sample_macs2_narrow_homer_ch
-    set val(sampleid), file("*/*.annotatePeaks.sysout") into merge_sample_macs2_narrow_homer_sysout_ch
-
-    script:
-        """
-        mkdir -p ${sampleid}
-        annotatePeaks.pl ${peak} ${fasta} -gid -gtf ${gtf} > ${sampleid}/${sampleid}_peaks.homer.annotatePeaks.txt 2> ${sampleid}/${sampleid}_peaks.homer.annotatePeaks.sysout
-        """
-}
-
-// CALCULATE FRIP SCORE USING BEDTOOLS
-process merge_sample_macs2_narrow_frip {
-
-    tag "$sampleid"
-
-    publishDir "${params.outdir}/align/mergeSample/macs2/narrowPeak", mode: 'copy'
-
-    input:
-    set val(sampleid), file(peak), file(bam), file(flagstat) from merge_sample_macs2_narrow_frip_in_ch.join(merge_sample_rmdup_macs2_narrow_frip_ch, by: [0]).join(merge_sample_rmdup_flagstat_macs2_narrow_frip_ch, by: [0])
-
-    output:
-    set val(sampleid), file("*/*.frip.txt") into merge_sample_macs2_narrow_frip_ch
-
-    script:
-        """
-        mkdir -p ${sampleid}
-        READS_IN_PEAKS=\$(intersectBed -a ${bam[0]} -b ${peak} -bed -c -f 0.20 | awk -F '\t' '{sum += \$NF} END {print sum}')
-        grep 'mapped (' ${flagstat} | awk -v a="\$READS_IN_PEAKS" '{print a/\$1}' > ${sampleid}/${sampleid}_peaks.frip.txt
-        """
-}
-
-// GET LIST OF FRIP FILES ACROSS ALL SAMPLES FOR QC PLOT
-merge_sample_macs2_narrow_frip_ch.map{ it -> [ "macs2_frip", [it[1]] ]}
-                                    .groupTuple( by: [0] )
-                                    .map{ it ->  [ it[0], it[1].flatten().sort().collect{ it.getName().replace("_peaks.frip.txt","") } , it[1].flatten().sort() ]}
-                                    .set { merge_sample_macs2_narrow_frip_collate_ch }
-
-// GENERATE PLOTS FOR FRIP SCORES ACROSS ALL SAMPLES
-process merge_sample_macs2_narrow_fripqc {
-
-   tag "$name"
-
-   publishDir "${params.outdir}/align/mergeSample/macs2/narrowPeak/qc/", mode: 'copy'
-
-   input:
-   set val(name), val(sampleids), file(frips) from merge_sample_macs2_narrow_frip_collate_ch
-
-   output:
-   file ("*.pdf") into merge_sample_macs2_narrow_fripqc_ch
-
-   script:
-       """
-       Rscript $baseDir/bin/plot_frip.R -i ${frips.join(',')} -s ${sampleids.join(',')} -o ./ -p ${name}
-       """
-}
-
-// GET LIST OF HOMER ANNOTATED FILES ACROSS ALL SAMPLES FOR QC PLOTS
-merge_sample_macs2_narrow_homer_ch.map{ it -> [ "macs2_homer_annotation", [it[1]] ]}
-                                  .groupTuple( by: [0] )
-                                  .map{ it ->  [ it[0], it[1].flatten().sort().collect{ it.getName().replace("_peaks.homer.annotatePeaks.txt","") } , it[1].flatten().sort() ]}
-                                  .set { merge_sample_macs2_narrow_homer_collate_ch}
-
-// GENERATE PLOTS FOR VARIOUS ASPECTS OF HOMER ANNOTATION ACROSS ALL SAMPLES
-process merge_sample_macs2_narrow_homerqc {
-
-   tag "$name"
-
-   publishDir "${params.outdir}/align/mergeSample/macs2/narrowPeak/qc/", mode: 'copy'
-
-   input:
-   set val(name), val(sampleids), file(homers) from merge_sample_macs2_narrow_homer_collate_ch
-
-   output:
-   file ("*.pdf") into merge_sample_macs2_narrow_homerqc_ch
-
-   script:
-       """
-       Rscript $baseDir/bin/homer_plot_annotation.R -i ${homers.join(',')} -s ${sampleids.join(',')} -o ./ -p ${name}
-       """
-}
-
-// GET LIST OF PEAK ACROSS ALL SAMPLES FOR MERGING
-merge_sample_macs2_narrow_merge_peaks_in_ch.map{ it -> [ "merged_peaks", [it[1]] ]}
-                                             .groupTuple( by: [0] )
-                                             .map{ it ->  [ it[0], it[1].flatten().sort().collect{ it.getName().replace("_peaks.narrowPeak","") } , it[1].flatten().sort() ]}
-                                             .into { merge_sample_macs2_narrow_merge_peaks_in_ch; merge_sample_macs2_narrow_peakqc_in_ch }
-
-// GENERATE PLOTS FOR VARIOUS ASPECTS OF PEAKS ACROSS ALL SAMPLES
-process merge_sample_macs2_narrow_peakqc {
-
-   tag "$name"
-
-   publishDir "${params.outdir}/align/mergeSample/macs2/narrowPeak/qc/", mode: 'copy'
-
-   input:
-   set val(name), val(sampleids), file(peaks) from merge_sample_macs2_narrow_peakqc_in_ch
-
-   output:
-   file ("*.{txt,pdf}") into merge_sample_macs2_narrow_peakqc_ch
-
-   script:
-       """
-       Rscript $baseDir/bin/macs2_peakqc.R -i ${peaks.join(',')} -s ${sampleids.join(',')} -o ./ -p macs2_peakqc
-       """
-}
-
-// MERGE PEAKS ACROSS ALL SAMPLES AND CREATE A BOOLEAN OUTPUT FILE TO AID FILTERING
-process merge_sample_macs2_narrow_merge_peaks {
-
-   tag "$name"
-
-   publishDir "${params.outdir}/align/mergeSample/macs2/narrowPeak/merged_peaks/", mode: 'copy'
-
-   input:
-   set val(name), val(sampleids), file(peaks) from merge_sample_macs2_narrow_merge_peaks_in_ch
-
-   output:
-   set val(name), file("*.boolean.txt") into merge_sample_macs2_narrow_merge_peaks_bool_ch
-   set val(name), file("*.bed") into merge_sample_macs2_narrow_merge_peaks_bed_ch
-   set val(name), file("*.saf") into merge_sample_macs2_narrow_merge_peaks_saf_ch
-   set val(name), file("*.log") into merge_sample_macs2_narrow_merge_peaks_log_ch
-
-   script:
-       """
-       sort -k1,1 -k2,2n ${peaks.join(' ')} | mergeBed -c 2,3,4,5,6,7,8,9 -o collapse,collapse,collapse,collapse,collapse,collapse,collapse,collapse > ${name}.txt
-       python $baseDir/bin/expand_merged_macs.py ${name}.txt ${sampleids.join(',')} ${name}.boolean.txt --min_samples 1
-       awk -v FS='\t' -v OFS='\t' 'FNR > 1 { print \$1, \$2, \$3, \$4, "0", "+" }' ${name}.boolean.txt > ${name}.bed
-       echo -e "GeneID\tChr\tStart\tEnd\tStrand" > ${name}.saf
-       awk -v FS='\t' -v OFS='\t' 'FNR > 1 { print \$4, \$1, \$2, \$3,  "+" }' ${name}.boolean.txt >> ${name}.saf
-       """
-}
-
-// ANNOTATE PEAKS USING HOMER ANNOTATE AND ADD ANNOTATION TO BOOLEAN OUTPUT FILE
-process merge_sample_macs2_narrow_merge_peaks_homer {
-
-    tag "${name}"
-
-    publishDir "${params.outdir}/align/mergeSample/macs2/narrowPeak/merged_peaks/", mode: 'copy'
-
-    input:
-    set val(name), file(bed) from merge_sample_macs2_narrow_merge_peaks_bed_ch
-    set val(name), file(bool) from merge_sample_macs2_narrow_merge_peaks_bool_ch
-    file fasta from fasta_merge_sample_macs2_narrow_merge_peaks_homer_ch.collect()
-    file gtf from gtf_merge_sample_macs2_narrow_merge_peaks_homer_ch.collect()
-
-    output:
-    set val(name), file("*.annotatePeaks.txt") into merge_sample_macs2_narrow_merge_peaks_homer_ch
-    set val(name), file("*.annotatePeaks.sysout") into merge_sample_macs2_narrow_merge_peaks_homer_sysout_ch
-
-    script:
-        """
-        annotatePeaks.pl ${bed} ${fasta} -gid -gtf ${gtf} > ${name}.homer.annotatePeaks.txt 2> ${name}.homer.annotatePeaks.sysout
-        cut -f2- ${name}.homer.annotatePeaks.txt | awk 'NR==1; NR > 1 {print \$0 | "sort -k1,1 -k2,2n"}' | cut -f6- > tmp.txt
-        paste ${bool} tmp.txt > ${bool.toString().replace(".txt","")}.homer.annotatePeaks.txt
-        """
-}
-
-// GET LIST OF REPLICATE LEVEL BAM FILES
-merge_replicate_name_bam_merge_sample_narrow_featurecounts_ch.map{ it -> [ "merged_bam", [it[1]] ]}
-                                                               .groupTuple( by: [0] )
-                                                               .map{ it ->  [ it[1].flatten().sort().collect{ it.getName().replace(".mRp.rmD.bam","") } , it[1].flatten().sort() ]}
-                                                               .set { merge_replicate_name_bam_merge_sample_narrow_featurecounts_ch }
-
-process merge_sample_macs2_narrow_merge_peaks_featurecounts {
-
-    tag "${name}"
-
-    label 'highcpu'
-
-    publishDir "${params.outdir}/align/mergeSample/macs2/narrowPeak/merged_peaks/", mode: 'copy'
-
-    input:
-    set val (sampleids), file(bams) from merge_replicate_name_bam_merge_sample_narrow_featurecounts_ch
-    set val(name), file(saf) from merge_sample_macs2_narrow_merge_peaks_saf_ch.collect()
-
-    output:
-    set val(name), file("*.featureCounts.txt") into merge_sample_macs2_narrow_merge_peaks_featurecounts_ch
-    set val(name), file("*.featureCounts.sysout") into merge_sample_macs2_narrow_merge_peaks_featurecounts_sysout_ch
-
-    script:
-        """
-        featureCounts -F SAF -O -T ${task.cpus} --fracOverlap 0.5 --primary --ignoreDup -p -B -C --donotsort -a ${saf} -o ${name}.replicate.featureCounts.txt ${bams.join(' ')} >> ${name}.replicate.featureCounts.sysout 2>&1
-        """
-}
-
-process merge_sample_macs2_narrow_merge_peaks_differential {
-
-    tag "${name}"
-
-    publishDir "${params.outdir}/align/mergeSample/macs2/narrowPeak/merged_peaks/", mode: 'copy'
-
-    input:
-    set val(name), file(counts) from merge_sample_macs2_narrow_merge_peaks_featurecounts_ch
-
-    output:
-    set val(name), file("deseq2/*") into merge_sample_macs2_narrow_merge_peaks_differential_ch
-    file "*.txt" into merge_sample_macs2_narrow_merge_peaks_differential_complete_ch
-
-    script:
-        """
-        Rscript $baseDir/bin/featurecounts_deseq2.R -i ${counts} -b '.mRp.rmD.bam' -o ./deseq2 -p ${name}
-        touch merge_sample_macs2_narrow_merge_peaks_differential.complete.txt
+        touch merge_sample_macs2_merge_peaks_differential.complete.txt
         """
 }
 
@@ -2072,16 +1584,14 @@ process igv_session {
 
     tag "igv_session"
 
-    publishDir "${params.outdir}/igv/", mode: 'copy'
+    publishDir "${params.outdir}/igv", mode: 'copy'
 
     input:
     file bigwigs from merge_replicate_bigwig_ch.merge(merge_sample_bigwig_ch)
     file fasta from fasta_igv_ch.collect()
     file gtf from gtf_igv_ch.collect()
-    file replicate_broad_diff from merge_replicate_macs2_broad_merge_peaks_differential_complete_ch.collect()
-    file replicate_narrow_diff from merge_replicate_macs2_narrow_merge_peaks_differential_complete_ch.collect()
-    file sample_broad_diff from merge_sample_macs2_broad_merge_peaks_differential_complete_ch.collect()
-    file sample_narrow_diff from merge_sample_macs2_narrow_merge_peaks_differential_complete_ch.collect()
+    file replicate_diff from merge_replicate_macs2_merge_peaks_differential_complete_ch.collect()
+    file sample_diff from merge_sample_macs2_merge_peaks_differential_complete_ch.collect()
 
     output:
     file "*.{xml,txt}" into igv_session_ch
@@ -2108,7 +1618,7 @@ process multiqc {
 
     tag "multiqc"
 
-    publishDir "${params.outdir}/qc/multiqc/", mode: 'copy'
+    publishDir "${params.outdir}/qc/multiqc", mode: 'copy'
 
     input:
     file igvs from igv_session_ch

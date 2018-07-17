@@ -35,12 +35,6 @@ def recursive_glob(treeroot, pattern):
     return results
 
 ############################################
-
-# def floatToRoundDPStr(Float,DP=2):
-#
-#     return str(Decimal(str(Float)).quantize(Decimal(str(1/(float(10**DP)))),rounding='ROUND_HALF_EVEN'))
-
-############################################
 ############################################
 ############################################
 ############################################

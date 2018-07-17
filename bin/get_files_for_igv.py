@@ -17,12 +17,12 @@ import funcs
 ############################################
 ############################################
 
-Description = 'Create a tab-delimited file with "file_path\tcolour" for IGV. This will be specific to directory structure of atacSeqPE nextflow pipeline.'
+Description = 'Create a tab-delimited file with "file_path\tcolour" for IGV. This will be specific to directory structure of BABS-ATACSeqPE nextflow pipeline.'
 Epilog = """Example usage: python get_files_for_igv.py <RESULTS_DIR> <OUT_FILE>"""
 argParser = argparse.ArgumentParser(description=Description, epilog=Epilog)
 
 ## REQUIRED PARAMETERS
-argParser.add_argument('RESULTS_DIR', help="Results directory. The directory structure used to find files will be specific to atacSeqPE nextflow pipeline.")
+argParser.add_argument('RESULTS_DIR', help="Results directory. The directory structure used to find files will be specific to BABS-ATACSeqPE nextflow pipeline.")
 argParser.add_argument('OUT_FILE', help="Path to output file.")
 args = argParser.parse_args()
 
@@ -38,14 +38,11 @@ def get_files_for_igv(ResultsDir,OutFile):
 
     ## GET SAMPLE-LEVEL FILES
     fileList = []
-    fileList += [(x,'0,0,0') for x in funcs.recursive_glob(os.path.join(ResultsDir,'align/mergeSample/macs2/broadPeak/merged_peaks/'), 'merged_peaks.bed')]
-    fileList += [(x,'255,0,0') for x in funcs.recursive_glob(os.path.join(ResultsDir,'align/mergeSample/macs2/broadPeak/merged_peaks/deseq2/'), '*.FDR0.01.results.bed')]
-    fileList += [(x,'0,0,0') for x in funcs.recursive_glob(os.path.join(ResultsDir,'align/mergeSample/macs2/narrowPeak/merged_peaks/'), 'merged_peaks.bed')]
-    fileList += [(x,'102,0,102') for x in funcs.recursive_glob(os.path.join(ResultsDir,'align/mergeSample/macs2/narrowPeak/merged_peaks/deseq2/'), '*.FDR0.01.results.bed')]
+    fileList += [(x,'0,0,0') for x in funcs.recursive_glob(os.path.join(ResultsDir,'align/mergeSample/macs2/merged_peaks/'), 'merged_peaks.bed')]
+    fileList += [(x,'255,0,0') for x in funcs.recursive_glob(os.path.join(ResultsDir,'align/mergeSample/macs2/merged_peaks/deseq2/'), '*.FDR0.01.results.bed')]
 
     sampleFileDict = {}
-    for ifile in funcs.recursive_glob(os.path.join(ResultsDir,'align/mergeSample/macs2/broadPeak/'), '*.broadPeak') \
-               + funcs.recursive_glob(os.path.join(ResultsDir,'align/mergeSample/macs2/narrowPeak/'), '*.narrowPeak') \
+    for ifile in funcs.recursive_glob(os.path.join(ResultsDir,'align/mergeSample/macs2/'), '*.broadPeak') \
                + funcs.recursive_glob(os.path.join(ResultsDir,'align/mergeSample/bigwig/'), '*.bigWig'):
         extension = os.path.splitext(ifile)[1]
         sampleid = ''
@@ -62,14 +59,11 @@ def get_files_for_igv(ResultsDir,OutFile):
         fileList += sampleFileDict[sampleid]
 
     ## GET REPLICATE-LEVEL FILES
-    fileList += [(x,'0,0,0') for x in funcs.recursive_glob(os.path.join(ResultsDir,'align/mergeReplicate/macs2/broadPeak/merged_peaks/'), 'merged_peaks.bed')]
-    fileList += [(x,'0,102,102') for x in funcs.recursive_glob(os.path.join(ResultsDir,'align/mergeReplicate/macs2/broadPeak/merged_peaks/deseq2/'), '*.FDR0.01.results.bed')]
-    fileList += [(x,'0,0,0') for x in funcs.recursive_glob(os.path.join(ResultsDir,'align/mergeReplicate/macs2/narrowPeak/merged_peaks/'), 'merged_peaks.bed')]
-    fileList += [(x,'102,102,0') for x in funcs.recursive_glob(os.path.join(ResultsDir,'align/mergeReplicate/macs2/narrowPeak/merged_peaks/deseq2/'), '*.FDR0.01.results.bed')]
+    fileList += [(x,'0,0,0') for x in funcs.recursive_glob(os.path.join(ResultsDir,'align/mergeReplicate/macs2/merged_peaks/'), 'merged_peaks.bed')]
+    fileList += [(x,'0,102,102') for x in funcs.recursive_glob(os.path.join(ResultsDir,'align/mergeReplicate/macs2/merged_peaks/deseq2/'), '*.FDR0.01.results.bed')]
 
     sampleFileDict = {}
-    for ifile in funcs.recursive_glob(os.path.join(ResultsDir,'align/mergeReplicate/macs2/broadPeak/'), '*.broadPeak') \
-               + funcs.recursive_glob(os.path.join(ResultsDir,'align/mergeReplicate/macs2/narrowPeak/'), '*.narrowPeak') \
+    for ifile in funcs.recursive_glob(os.path.join(ResultsDir,'align/mergeReplicate/macs2/'), '*.broadPeak') \
                + funcs.recursive_glob(os.path.join(ResultsDir,'align/mergeReplicate/bigwig/'), '*.bigWig'):
         extension = os.path.splitext(ifile)[1]
         sampleid = ''
