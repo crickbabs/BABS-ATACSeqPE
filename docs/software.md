@@ -61,9 +61,46 @@ Standard linux tools including `cut`, `awk`, `sort`, `mv`, `touch`, `echo`, `mkd
 
 ## Software configuration
 
-Once installed, nextflow needs to be configured to use the software and associated versions. Local will rely on software being in path.
+Once installed, nextflow needs to be configured to use the software and associated versions.
+
+### Environment modules
+
+See [BABS module definitions](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/config/babs.config).
+
+### Conda
+
+See [Conda environment file](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/environment.yml).
+
+### Local install
+
+Local will rely on software being in path.
+
 
 <!---
 Add information on how to download file without internet connection see NGI-RNASeq
 Add section on how to edit config files
+
+## conda config --add envs_dirs /camp/stp/babs/working/patelh/code/conda/envs/
+## conda config --add pkgs_dirs /camp/stp/babs/working/patelh/code/conda/pkgs/
+
+## Download the environment.yml file
+# curl https://raw.githubusercontent.com/crickbabs/BABS-ATACSeqPE/master/environment.yml -o environment.yml
+#
+## Load the Anaconda module
+# ml purge && ml Anaconda2/5.1.0
+#
+## Create a new conda environment using it
+# conda env create -f environment.yml
+#
+## Activate the new conda environment
+# source activate BABS-ATACSeqPE
+#
+## Deactivate the conda environment
+# source deactivate
+
+##
+## ml purge && ml Anaconda2/5.1.0
+## conda env create -f BABS-ATACSeqPE_environment.yml
+## conda remove --name BABS-ATACSeqPE --all && conda info --envs
+
 -->

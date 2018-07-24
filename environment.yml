@@ -1,0 +1,34 @@
+## You can use this file to create a conda environment for this pipeline.
+## See docs: https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/docs/software.md
+
+name: BABS-ATACSeqPE
+channels:
+    - defaults
+    - conda-forge
+    - bioconda
+dependencies:
+    - samtools=1.7
+    - fastqc=0.11.7
+    - fastq-screen=0.11.1
+    - cutadapt=1.16
+    - bwa=0.7.15
+    - picard=2.18.0
+    - bamtools=2.5.1
+    - pysam=0.14.0
+    - bedtools=2.27.1
+    - ucsc-wigtobigwig=366
+    - macs2=2.1.1.20160309
+    - homer=4.9.1
+    - subread=1.6.2
+    - multiqc=1.5
+    - bioconductor-deseq2=1.16.1
+    - bioconductor-vsn=3.46.0
+    - r-ggplot2=2.2.1
+    - r-reshape2=1.4.2
+    - r-argparse=1.0.4
+    - r-scales=0.4.1
+    - r-rcolorbrewer=1.1_2
+    - r-pheatmap=1.0.8
+    - r-lattice=0.20_35
+    - r=3.4.1
+    - python=2.7.15
