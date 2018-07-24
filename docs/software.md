@@ -45,15 +45,15 @@ If you are running this pipeline at The Francis Crick Institute all of the softw
 
 The following R libraries may need to be installed if unavailable. You can test this be loading the `R` module (if required), typing `R` at the command prompt and attempting to load the packages below e.g. `> library(DESeq2)` and so on. The pipeline assumes the correct R library path is set in order find the installed packages. If not, you can set this in the `.Rprofile` file in the user home directory or add a line which extends the `R` [libPaths](https://stat.ethz.ch/R-manual/R-devel/library/base/html/libPaths.html) in the executable R scripts in the `bin/` directory.
 
-[DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)    
-[argparse](https://cran.r-project.org/web/packages/argparse/index.html)  
-[vsn](https://bioconductor.org/packages/release/bioc/html/vsn.html)  
+[optparse](https://cran.r-project.org/web/packages/optparse/index.html)    
 [ggplot2](https://ggplot2.tidyverse.org/)  
 [reshape2](https://cran.r-project.org/web/packages/reshape2/index.html)  
 [scales](https://cran.r-project.org/web/packages/scales/index.html)  
-[RColorBrewer](https://cran.r-project.org/web/packages/RColorBrewer/index.html)  
 [pheatmap](https://cran.r-project.org/web/packages/pheatmap/index.html)  
-[lattice](https://cran.r-project.org/web/packages/lattice/index.html)  
+[lattice](https://cran.r-project.org/web/packages/lattice/index.html)
+[RColorBrewer](https://cran.r-project.org/web/packages/RColorBrewer/index.html)    
+[DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)    
+[vsn](https://bioconductor.org/packages/release/bioc/html/vsn.html)  
 
 ### Linux utilities
 
@@ -98,9 +98,12 @@ Add section on how to edit config files
 ## Deactivate the conda environment
 # source deactivate
 
-##
 ## ml purge && ml Anaconda2/5.1.0
 ## conda env create -f BABS-ATACSeqPE_environment.yml
+## conda activate BABS-ATACSeqPE
+## conda list
+##
+## conda deactivate
 ## conda remove --name BABS-ATACSeqPE --all && conda info --envs
 
 -->
