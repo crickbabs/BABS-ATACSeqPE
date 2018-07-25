@@ -33,12 +33,12 @@ def helpMessage() {
     Usage:
     The typical command for running the pipeline is as follows:
 
-    nextflow run main.nf --design design.csv --genome hg19 -profile babs
+    nextflow run main.nf --design design.csv --genome hg19 -profile babs_modules
 
     Mandatory arguments:
       --design                      Comma separted file containing information about the samples (see README)
       --genome                      Genome shortname (e.g. hg19)
-      -profile                      Hardware config to use e.g. babs
+      -profile                      Hardware config to use e.g. babs_modules,conda
 
     References:                     If not specified in the configuration file or you wish to overwrite any of the references
       --fasta                       Path to Fasta reference file containing all chromosomes/contigs
@@ -310,13 +310,17 @@ process raw_fastqscreen {
     label 'mediumcpu'
 
     publishDir "${params.outdir}/qc/fastq_screen", mode: 'copy',
-               saveAs: {filename -> filename.endsWith(".txt") ? "txt/$filename" : "$filename"}
+                saveAs: {filename ->
+                            if (filename.endsWith(".txt")) "txt/$filename"
+                            else if (filename.endsWith(".png")) "png/$filename"
+                            else "$filename"
+                        }
 
     input:
     set val(sampleid), val(sample), val(replicate), val(run), file(fastq_1), file(fastq_2) from design_raw_fastqscreen_ch
 
     output:
-    set val(sampleid), file("*.{txt,html}") into raw_fastqscreen_ch
+    set val(sampleid), file("*.{png,txt,html}") into raw_fastqscreen_ch
 
     when:
     params.fastqscreen_config
@@ -326,14 +330,10 @@ process raw_fastqscreen {
         ln -s ${fastq_1} ${sampleid}_1.fastq.gz
         ln -s ${fastq_2} ${sampleid}_2.fastq.gz
         fastq_screen --outdir ./ \\
-                     --subset 200000 \\
-                     --aligner bowtie2 \\
                      --conf ${fastqscreen_config} \\
                      --threads ${task.cpus} \\
                      ${sampleid}_1.fastq.gz
         fastq_screen --outdir ./ \\
-                     --subset 200000 \\
-                     --aligner bowtie2 \\
                      --conf ${fastqscreen_config} \\
                      --threads ${task.cpus} \\
                      ${sampleid}_2.fastq.gz
@@ -555,28 +555,46 @@ process markdup {
     set val(sampleid), file(bam) from bwa_bam_ch
 
     output:
-    set val(sampleid), file("*.{bam,bam.bai}") into markdup_filter_bam_ch, markdup_collectmetrics_in_ch
-    set val(sampleid), file("*.flagstat") into markdup_flagstat_ch
-    set val(sampleid), file("*.idxstats") into markdup_idxstats_ch
-    set val(sampleid), file("*.metrics.txt") into markdup_metrics_ch
-    set val(sampleid), file("*.sysout") into markdup_sysout_ch
+        set val(sampleid), file("*.{bam,bam.bai}") into markdup_filter_bam_ch, markdup_collectmetrics_in_ch
+        set val(sampleid), file("*.flagstat") into markdup_flagstat_ch
+        set val(sampleid), file("*.idxstats") into markdup_idxstats_ch
+        set val(sampleid), file("*.metrics.txt") into markdup_metrics_ch
+        set val(sampleid), file("*.sysout") into markdup_sysout_ch
 
     script:
         out_prefix="${sampleid}.mkD"
-        """
-        java -Xmx${task.memory.toString().split(" ")[0]}g -jar \${EBROOTPICARD}/picard.jar MarkDuplicates \\
-             VALIDATION_STRINGENCY=LENIENT \\
-             REMOVE_DUPLICATES=false \\
-             ASSUME_SORTED=true \\
-             TMP_DIR=tmp \\
-             INPUT=${bam[0]} \\
-             OUTPUT=${out_prefix}.sorted.bam \\
-             METRICS_FILE=${out_prefix}.MarkDuplicates.metrics.txt \\
-             >> ${out_prefix}.MarkDuplicates.sysout 2>&1
-        samtools index ${out_prefix}.sorted.bam
-        samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
-        samtools idxstats ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.idxstats
-        """
+        if ( workflow.profile == 'conda' ) {
+            """
+            picard MarkDuplicates \\
+                   VALIDATION_STRINGENCY=LENIENT \\
+                   REMOVE_DUPLICATES=false \\
+                   ASSUME_SORTED=true \\
+                   TMP_DIR=tmp \\
+                   INPUT=${bam[0]} \\
+                   OUTPUT=${out_prefix}.sorted.bam \\
+                   METRICS_FILE=${out_prefix}.MarkDuplicates.metrics.txt \\
+                   >> ${out_prefix}.MarkDuplicates.sysout 2>&1
+            samtools index ${out_prefix}.sorted.bam
+            samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
+            samtools idxstats ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.idxstats
+            """
+        } else {
+            """
+            PICARD=`which picard.jar`
+            java -Xmx${task.memory.toString().split(" ")[0]}g -jar \$PICARD MarkDuplicates \\
+                 VALIDATION_STRINGENCY=LENIENT \\
+                 REMOVE_DUPLICATES=false \\
+                 ASSUME_SORTED=true \\
+                 TMP_DIR=tmp \\
+                 INPUT=${bam[0]} \\
+                 OUTPUT=${out_prefix}.sorted.bam \\
+                 METRICS_FILE=${out_prefix}.MarkDuplicates.metrics.txt \\
+                 >> ${out_prefix}.MarkDuplicates.sysout 2>&1
+            samtools index ${out_prefix}.sorted.bam
+            samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
+            samtools idxstats ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.idxstats
+            """
+        }
 }
 
 // RUN PICARD COLLECTMULTIPLE METRICS ON COORDINATE SORTED BAM
@@ -603,15 +621,28 @@ process markdup_collectmetrics {
 
     script:
         out_prefix="${sampleid}.mkD"
-        """
-        java -Xmx${task.memory.toString().split(" ")[0]}g -jar \${EBROOTPICARD}/picard.jar CollectMultipleMetrics \\
-             VALIDATION_STRINGENCY=LENIENT \\
-             TMP_DIR=tmp \\
-             INPUT=${bam[0]} \\
-             OUTPUT=${out_prefix}.CollectMultipleMetrics \\
-             REFERENCE_SEQUENCE=${fasta} \\
-             >> ${out_prefix}.CollectMultipleMetrics.sysout 2>&1
-        """
+        if ( workflow.profile == 'conda' ) {
+            """
+            picard CollectMultipleMetrics \\
+                   VALIDATION_STRINGENCY=LENIENT \\
+                   TMP_DIR=tmp \\
+                   INPUT=${bam[0]} \\
+                   OUTPUT=${out_prefix}.CollectMultipleMetrics \\
+                   REFERENCE_SEQUENCE=${fasta} \\
+                   >> ${out_prefix}.CollectMultipleMetrics.sysout 2>&1
+            """
+        } else {
+            """
+            PICARD=`which picard.jar`
+            java -Xmx${task.memory.toString().split(" ")[0]}g -jar \$PICARD CollectMultipleMetrics \\
+                 VALIDATION_STRINGENCY=LENIENT \\
+                 TMP_DIR=tmp \\
+                 INPUT=${bam[0]} \\
+                 OUTPUT=${out_prefix}.CollectMultipleMetrics \\
+                 REFERENCE_SEQUENCE=${fasta} \\
+                 >> ${out_prefix}.CollectMultipleMetrics.sysout 2>&1
+            """
+        }
 }
 
 // FILTER BAM FILE TO KEEP (1) UNIQUELY MAPPED, (2) PRIMARY ALIGNMENT, (3) PROPERLY-PAIRED, (4) NON-MITOCHONDRIAL
@@ -760,17 +791,32 @@ process merge_replicate {
         bam_files = bams.findAll { it.toString().endsWith('.bam') }.sort()
         flagstat_files = bams.findAll { it.toString().endsWith('.flagstat') }.sort()
         if (bam_files.size() > 1) {
-            """
-            java -Xmx${task.memory.toString().split(" ")[0]}g -jar \${EBROOTPICARD}/picard.jar MergeSamFiles \\
-                 VALIDATION_STRINGENCY=LENIENT \\
-                 SORT_ORDER=coordinate \\
-                 TMP_DIR=tmp \\
-                 ${'INPUT='+bam_files.join(' INPUT=')} \\
-                 OUTPUT=${out_prefix}.sorted.bam \\
-                 >> ${out_prefix}.MergeSamFiles.sysout 2>&1
-            samtools index ${out_prefix}.sorted.bam
-            samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
-            """
+            if ( workflow.profile == 'conda' ) {
+                """
+                picard MergeSamFiles \\
+                       VALIDATION_STRINGENCY=LENIENT \\
+                       SORT_ORDER=coordinate \\
+                       TMP_DIR=tmp \\
+                       ${'INPUT='+bam_files.join(' INPUT=')} \\
+                       OUTPUT=${out_prefix}.sorted.bam \\
+                       >> ${out_prefix}.MergeSamFiles.sysout 2>&1
+                samtools index ${out_prefix}.sorted.bam
+                samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
+                """
+            } else {
+                """
+                PICARD=`which picard.jar`
+                java -Xmx${task.memory.toString().split(" ")[0]}g -jar \$PICARD MergeSamFiles \\
+                     VALIDATION_STRINGENCY=LENIENT \\
+                     SORT_ORDER=coordinate \\
+                     TMP_DIR=tmp \\
+                     ${'INPUT='+bam_files.join(' INPUT=')} \\
+                     OUTPUT=${out_prefix}.sorted.bam \\
+                     >> ${out_prefix}.MergeSamFiles.sysout 2>&1
+                samtools index ${out_prefix}.sorted.bam
+                samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
+                """
+            }
         } else {
             """
             touch ${out_prefix}.sorted.bam
@@ -810,19 +856,36 @@ process merge_replicate_markdup {
         bam_files = orphan_bams.findAll { it.toString().endsWith('.bam') }.sort()
         flagstat_files = orphan_bams.findAll { it.toString().endsWith('.flagstat') }.sort()
         if (bam_files.size() > 1) {
-            """
-            java -Xmx${task.memory.toString().split(" ")[0]}g -jar \${EBROOTPICARD}/picard.jar MarkDuplicates \\
-                 VALIDATION_STRINGENCY=LENIENT \\
-                 REMOVE_DUPLICATES=false \\
-                 ASSUME_SORTED=true \\
-                 TMP_DIR=tmp \\
-                 INPUT=${merged_bam[0]} \\
-                 OUTPUT=${out_prefix}.sorted.bam \\
-                 METRICS_FILE=${out_prefix}.MarkDuplicates.metrics.txt \\
-                 >> ${out_prefix}.MarkDuplicates.sysout 2>&1
-            samtools index ${out_prefix}.sorted.bam
-            samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
-            """
+            if ( workflow.profile == 'conda' ) {
+                """
+                picard MarkDuplicates \\
+                       VALIDATION_STRINGENCY=LENIENT \\
+                       REMOVE_DUPLICATES=false \\
+                       ASSUME_SORTED=true \\
+                       TMP_DIR=tmp \\
+                       INPUT=${merged_bam[0]} \\
+                       OUTPUT=${out_prefix}.sorted.bam \\
+                       METRICS_FILE=${out_prefix}.MarkDuplicates.metrics.txt \\
+                       >> ${out_prefix}.MarkDuplicates.sysout 2>&1
+                samtools index ${out_prefix}.sorted.bam
+                samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
+                """
+            } else {
+                """
+                PICARD=`which picard.jar`
+                java -Xmx${task.memory.toString().split(" ")[0]}g -jar \$PICARD MarkDuplicates \\
+                     VALIDATION_STRINGENCY=LENIENT \\
+                     REMOVE_DUPLICATES=false \\
+                     ASSUME_SORTED=true \\
+                     TMP_DIR=tmp \\
+                     INPUT=${merged_bam[0]} \\
+                     OUTPUT=${out_prefix}.sorted.bam \\
+                     METRICS_FILE=${out_prefix}.MarkDuplicates.metrics.txt \\
+                     >> ${out_prefix}.MarkDuplicates.sysout 2>&1
+                samtools index ${out_prefix}.sorted.bam
+                samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
+                """
+            }
         } else {
             """
             touch ${out_prefix}.sorted.bam
@@ -955,7 +1018,6 @@ process merge_replicate_bigwig {
     script:
         out_prefix="${sampleid}.mRp.rmD"
         """
-
         wigToBigWig -clip ${bedgraph}  ${chrom_sizes} ${out_prefix}.bigWig
         """
 }
@@ -1293,17 +1355,32 @@ process merge_sample {
         bam_files = bams.findAll { it.toString().endsWith('.bam') }.sort()
         flagstat_files = bams.findAll { it.toString().endsWith('.flagstat') }.sort()
         if (bam_files.size() > 1) {
-            """
-            java -Xmx${task.memory.toString().split(" ")[0]}g -jar \${EBROOTPICARD}/picard.jar MergeSamFiles \\
-                 VALIDATION_STRINGENCY=LENIENT \\
-                 SORT_ORDER=coordinate \\
-                 TMP_DIR=tmp \\
-                 ${'INPUT='+bam_files.join(' INPUT=')} \\
-                 OUTPUT=${out_prefix}.sorted.bam \\
-                 >> ${out_prefix}.MergeSamFiles.sysout 2>&1
-            samtools index ${out_prefix}.sorted.bam
-            samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
-            """
+            if ( workflow.profile == 'conda' ) {
+                """
+                picard MergeSamFiles \\
+                     VALIDATION_STRINGENCY=LENIENT \\
+                     SORT_ORDER=coordinate \\
+                     TMP_DIR=tmp \\
+                     ${'INPUT='+bam_files.join(' INPUT=')} \\
+                     OUTPUT=${out_prefix}.sorted.bam \\
+                     >> ${out_prefix}.MergeSamFiles.sysout 2>&1
+                samtools index ${out_prefix}.sorted.bam
+                samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
+                """
+            else {
+                """
+                PICARD=`which picard.jar`
+                java -Xmx${task.memory.toString().split(" ")[0]}g -jar \$PICARD MergeSamFiles \\
+                     VALIDATION_STRINGENCY=LENIENT \\
+                     SORT_ORDER=coordinate \\
+                     TMP_DIR=tmp \\
+                     ${'INPUT='+bam_files.join(' INPUT=')} \\
+                     OUTPUT=${out_prefix}.sorted.bam \\
+                     >> ${out_prefix}.MergeSamFiles.sysout 2>&1
+                samtools index ${out_prefix}.sorted.bam
+                samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
+                """
+            }
         } else {
             """
             touch ${out_prefix}.sorted.bam
@@ -1343,19 +1420,36 @@ process merge_sample_markdup {
         bam_files = orphan_bams.findAll { it.toString().endsWith('.bam') }.sort()
         flagstat_files = orphan_bams.findAll { it.toString().endsWith('.flagstat') }.sort()
         if (bam_files.size() > 1) {
-            """
-            java -Xmx${task.memory.toString().split(" ")[0]}g -jar \${EBROOTPICARD}/picard.jar MarkDuplicates \\
-                 VALIDATION_STRINGENCY=LENIENT \\
-                 REMOVE_DUPLICATES=false \\
-                 ASSUME_SORTED=true \\
-                 TMP_DIR=tmp \\
-                 INPUT=${merged_bam[0]} \\
-                 OUTPUT=${out_prefix}.sorted.bam \\
-                 METRICS_FILE=${out_prefix}.MarkDuplicates.metrics.txt \\
-                 >> ${out_prefix}.MarkDuplicates.sysout 2>&1
-            samtools index ${out_prefix}.sorted.bam
-            samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
-            """
+            if ( workflow.profile == 'conda' ) {
+                """
+                picard MarkDuplicates \\
+                       VALIDATION_STRINGENCY=LENIENT \\
+                       REMOVE_DUPLICATES=false \\
+                       ASSUME_SORTED=true \\
+                       TMP_DIR=tmp \\
+                       INPUT=${merged_bam[0]} \\
+                       OUTPUT=${out_prefix}.sorted.bam \\
+                       METRICS_FILE=${out_prefix}.MarkDuplicates.metrics.txt \\
+                       >> ${out_prefix}.MarkDuplicates.sysout 2>&1
+                samtools index ${out_prefix}.sorted.bam
+                samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
+                """
+            } else {
+                """
+                PICARD=`which picard.jar`
+                java -Xmx${task.memory.toString().split(" ")[0]}g -jar \$PICARD MarkDuplicates \\
+                     VALIDATION_STRINGENCY=LENIENT \\
+                     REMOVE_DUPLICATES=false \\
+                     ASSUME_SORTED=true \\
+                     TMP_DIR=tmp \\
+                     INPUT=${merged_bam[0]} \\
+                     OUTPUT=${out_prefix}.sorted.bam \\
+                     METRICS_FILE=${out_prefix}.MarkDuplicates.metrics.txt \\
+                     >> ${out_prefix}.MarkDuplicates.sysout 2>&1
+                samtools index ${out_prefix}.sorted.bam
+                samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
+                """
+            }
         } else {
             """
             touch ${out_prefix}.sorted.bam
