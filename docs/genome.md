@@ -8,7 +8,7 @@ The genome parameters required to run the pipeline are listed below:
 | `fasta`            | Path to multi-fasta file containing reference genome assembly.                                                                                                                                        |
 | `gtf`              | Path to [GTF](https://www.ensembl.org/info/website/upload/gff.html) file containing gene annotation which is typically available for download with the reference assembly.                            |
 | `mito_name`        | Name of the mitochondrial contig in the fasta file. ATACSeq datasets usually contain a high percentage of reads mapping to mitochondrial DNA, and as a result these will be filtered in the pipeline. |
-| `bwa_index`        | [Path to BWA index](http://bio-bwa.sourceforge.net/bwa.shtml) for reference genome assembly. See **Indexing genome** section below.                                                                   |
+| `bwa_index`        | Path to [BWA index](http://bio-bwa.sourceforge.net/bwa.shtml) for reference genome assembly. See **Indexing genome** section below.                                                                   |
 | `genome_mask`      | Path to BED format file containing genomic regions to exclude from the analysis. See [ENCODE blacklisted regions](https://sites.google.com/site/anshulkundaje/projects/blacklists).                   |
 | `macs_genome_size` | [MACS2 genome size](https://github.com/taoliu/MACS#-g--gsize) required by MACS2.                                                                                                                      |
 
