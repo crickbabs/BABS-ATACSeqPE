@@ -65,7 +65,7 @@ Once installed, nextflow needs to be configured to use the software and associat
 
 ### Environment modules
 
-See [BABS module definitions](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/config/babs.config).
+See [BABS module definitions](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/config/babs_modules.config).
 
 ### Conda
 

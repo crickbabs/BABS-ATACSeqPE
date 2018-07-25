@@ -1,13 +1,13 @@
 ## You can use this file to create a conda environment for this pipeline.
 ## See docs: https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/docs/software.md
 
-name: BABS-ATACSeqPE
+name: BABS-ATACSeqPE-1.0
 channels:
     - defaults
     - conda-forge
     - bioconda
 dependencies:
-    - conda-forge::ncurses=5.9                 ## Documented conflict see https://github.com/bioconda/bioconda-recipes/issues/1644
+    - conda-forge::ncurses=5.9                 ## Documented conflict between R and SAMTools. See https://github.com/bioconda/bioconda-recipes/issues/1644
     - samtools=1.7
     - fastqc=0.11.7
     - fastq-screen=0.11.3
