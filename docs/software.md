@@ -50,7 +50,7 @@ The following R libraries may need to be installed if unavailable. You can test 
 [reshape2](https://cran.r-project.org/web/packages/reshape2/index.html)  
 [scales](https://cran.r-project.org/web/packages/scales/index.html)  
 [pheatmap](https://cran.r-project.org/web/packages/pheatmap/index.html)  
-[lattice](https://cran.r-project.org/web/packages/lattice/index.html)
+[lattice](https://cran.r-project.org/web/packages/lattice/index.html)  
 [RColorBrewer](https://cran.r-project.org/web/packages/RColorBrewer/index.html)    
 [DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)    
 [vsn](https://bioconductor.org/packages/release/bioc/html/vsn.html)  
