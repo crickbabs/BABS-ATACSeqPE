@@ -212,7 +212,6 @@ summary['Current user']               = "$USER"
 summary['Current path']               = "$PWD"
 summary['Script directory']           = workflow.projectDir
 summary['Config profile']             = workflow.profile
-summary['Container']                  = workflow.container
 if(workflow.revision) summary['Pipeline release'] = workflow.revision
 if(params.project) summary['BABS project'] = params.project
 log.info summary.collect { k,v -> "${k.padRight(26)}: $v" }.join("\n")
@@ -1367,7 +1366,7 @@ process merge_sample {
                 samtools index ${out_prefix}.sorted.bam
                 samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
                 """
-            else {
+            } else {
                 """
                 PICARD=`which picard.jar`
                 java -Xmx${task.memory.toString().split(" ")[0]}g -jar \$PICARD MergeSamFiles \\
