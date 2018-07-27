@@ -1,7 +1,7 @@
 
 ## Load/Install Nextflow
 
-To run nextflow it needs to be available in your path. On an environment module system such as the one at The Francis Crick Institute this can be done by running the following command:
+To run nextflow it needs to be available in your path. On an environment module system such as the one at The Francis Crick Institute this can be achieved by running the following command:
 
 ```bash
 module load nextflow/0.30.2
@@ -13,13 +13,13 @@ See [nextflow.io](https://www.nextflow.io/) for further information on how to in
 
 ## Download the pipeline from github
 
-To obtain the pipeline run the following command in a directory where you want to perform the analysis:
+If you have internet access at the command-line, and [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) installed, you can obtain the pipeline by running the following command in a directory where you want to perform the analysis:
 
 ```bash
 git clone https://github.com/crickbabs/BABS-ATACSeqPE
 ```
 
-The nextflow pipeline and associated config and executable files will appear in the `BABS-ATACSeqPE` directory. It can now be configured to run on a Linux system of your choice.
+The nextflow pipeline and associated config and executable files will appear in the `BABS-ATACSeqPE/` directory. It can now be configured to run on a Linux system of your choice.
 
 ```bash
 cd BABS-ATACSeqPE
@@ -40,7 +40,7 @@ The software below is required to run the pipeline:
 
 ### R libraries
 
-The following R libraries may need to be installed if unavailable. You can test this be loading the `R` module (if required), typing `R` at the command prompt and attempting to load the packages below e.g. `> library(DESeq2)` and so on. The pipeline assumes the correct R library path is set in order find the installed packages. If not, you can set this in the `.Rprofile` file in the user home directory or add a line which extends the `R` [libPaths](https://stat.ethz.ch/R-manual/R-devel/library/base/html/libPaths.html) in the executable R scripts in the `bin/` directory.
+The following R libraries may need to be installed if unavailable. You can test this be loading the `R` module (if required), typing `R` at the command prompt and attempting to load the packages below e.g. `> library(optparse)` and so on. The pipeline assumes the correct R library path is set in order find the installed packages. If not, you can set this in the `.Rprofile` file in the user home directory or add a line which extends the `R` [libPaths](https://stat.ethz.ch/R-manual/R-devel/library/base/html/libPaths.html) in the executable R scripts in the `bin/` directory.
 
 |                                                                         |                                                                         |                                                                                 |
 |-------------------------------------------------------------------------|-------------------------------------------------------------------------|---------------------------------------------------------------------------------|
@@ -60,7 +60,7 @@ Depending on where and how you would like to run the pipeline, nextflow needs to
 
 If you are running this pipeline at The Francis Crick Institute all of the required software can be loaded with the environment module system on CAMP. A [module config file](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/conf/babs_modules.config) specifying the software modules to load has been been created for this purpose. If you want to change the versions of software just edit this file before running the pipeline, however, this may require some testing to make sure the nextflow processes requiring the software can still be run with the same command-line parameters.  
 
-By default, the pipeline will be run using the `slurm` job submission system. You will need an account to use the HPC cluster on CAMP if you want to run this at The Francis Crick Institute. If you prefer to run the pipeline locally in batch just replace `executor = 'slurm'` to `executor = 'local'` in the module config file (the pipeline may take a very long time and is only recommended for testing purposes).
+By default, the pipeline will be run using the `slurm` job submission system. You will need an account to use the HPC cluster on CAMP if you want to run this at The Francis Crick Institute. If you prefer to run the pipeline locally in serial just replace `executor = 'slurm'` to `executor = 'local'` in the module config file. However, the pipeline may take a very long time to complete and is only recommended for testing purposes.
 
 When running the pipeline you will have to specify `-profile babs_modules` in order to use this configuration.
 
@@ -68,7 +68,9 @@ When running the pipeline you will have to specify `-profile babs_modules` in or
 
 A [Conda environment file](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/environment.yaml) is provided with the pipeline for those that wish to run the pipeline on another system without having to painstakingly install all the software and associated dependencies. This will require an internet connection on the command-line and installation of [Anaconda or Miniconda](https://conda.io/docs/user-guide/install/index.html). Nextflow will create the Conda environment by downloading and installing all the required software before execution of the pipeline.
 
-A [conda config file](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/conf/conda.config) can be found in the `conf` directory. By default, the pipeline will be run using the `slurm` job submission system. You will need an account to use the HPC cluster on CAMP if you want to run this at The Francis Crick Institute. If you prefer to run the pipeline locally in batch just replace `executor = 'slurm'` to `executor = 'local'` in the conda config file (the pipeline may take a very long time and is only recommended for testing purposes). Before the submission of each nextflow process the relevant conda package will need to be available on the command-line to activate the Conda environment. If you are not running the pipeline at The Francis Crick Institute you will need to edit `beforeScript = 'module purge && ml Anaconda2/5.1.0'` in the config file to load/use Conda.
+A [conda config file](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/conf/conda.config) can be found in the `conf` directory. By default, the pipeline will be run using the `slurm` job submission system. You will need an account to use the HPC cluster on CAMP if you want to run this at The Francis Crick Institute. If you prefer to run the pipeline locally in serial just replace `executor = 'slurm'` to `executor = 'local'` in the conda config file. However, the pipeline may take a very long time to complete and is only recommended for testing purposes.  
+
+Before the submission of each nextflow process the relevant conda package will need to be available on the command-line to activate the Conda environment. If you are not running the pipeline at The Francis Crick Institute you will need to edit `beforeScript = 'module purge && ml Anaconda2/5.1.0'` in the config file to load/use Conda.
 
 When running the pipeline you will have to specify `-profile conda` in order to use this configuration.
 
