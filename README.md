@@ -59,7 +59,7 @@ The pipeline was written by the [The Bioinformatics & Biostatistics Group](https
 
 The pipeline was developed by [Harshil Patel](mailto:harshil.patel@crick.ac.uk), [Philip East](mailto:philip.east@crick.ac.uk) and [Nourdine Bah](mailto:nourdine.bah@crick.ac.uk).
 
-The [NGI-RNAseq](https://github.com/SciLifeLab/NGI-RNAseq) pipeline developed by Phil Ewels was used a template for this pipeline. Many thanks to Phil and the team at SciLifeLab.
+The [NGI-RNAseq](https://github.com/SciLifeLab/NGI-RNAseq) pipeline developed by Phil Ewels was used a template for this pipeline. Many thanks to Phil and the team at SciLifeLab. The help, tips and tricks provided by Paolo Di Tommaso were also invaluable. Thank you!
 
 # ![The Francis Crick Institute](https://raw.githubusercontent.com/crickbabs/BABS-ATACSeqPE/master/docs/images/The_Francis_Crick_Institute_small_logo.png)
 

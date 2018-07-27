@@ -18,13 +18,13 @@ The parameters can either be specified at the command-line when running the pipe
 nextflow run main.nf --design design.csv --fasta <FASTA_FILE> --gtf <GTF_FILE> --mito_name <MITO_NAME> --bwa_index <BWA_INDEX> --genome_mask <GENOME_MASK> --macs_genome_size <MACS_GENOME_SIZE> -profile babs_modules
 ```
 
-or you can edit the [genomes.config](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/conf/genomes.config) file to define and store these parameters for multiple genome assemblies. Using this method you will only need to provide the specified shorthand name for the reference genome when running the pipeline e.g. `--genome hg19`.
+or you can edit the [genomes.config](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/conf/genomes.config) file to define and store these parameters for multiple genome assemblies. Using this method you will only need to provide the specified shorthand name for the reference genome when running the pipeline.
 
 ```bash
 nextflow run main.nf --design design.csv --genome hg19 -profile babs_modules
 ```
 
-The `genome_base` variable in the [`nextflow.config`](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/nextflow.config) file will need to be customised to reflect the top-level directory where the genomes are stored on your system.
+The `genome_base` variable in the [`nextflow.config`](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/nextflow.config) file will also need to be customised to reflect the top-level directory where the genomes are stored on your system.
 
 ### Indexing genome
 
