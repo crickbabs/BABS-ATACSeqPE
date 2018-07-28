@@ -12,14 +12,6 @@
 		## - BAM_SUFFIX IS PORTION OF FILENAME AFTER SAMPLE NAME IN FEATURECOUNTS COLUMN SAMPLE NAMES E.G. ".rmDup.bam" if "DRUG_R1.rmDup.bam"
 		## - PACKAGES BELOW NEED TO BE INSTALLED
 
-## ADD SCATTERPLOTS ACROSS SAMPLES
-# library(GGally)
-# print(ggpairs(rld))
-
-## RUN THIS WITH R/3.3.1-foss-2016b-bioc-3.3-libX11-1.6.3
-## cd /camp/stp/babs/working/patelh/code/PYTHON/nextflow/atacSeq/results/align/mergeReplicate/macs2/broadPeak/merged_peaks
-## Rscript /camp/stp/babs/working/patelh/code/nextflow/atacSeqPE/bin/featurecounts_deseq2.R -i merged_peaks.replicate.featureCounts.txt -b ".mRp.rmD.bam" -o test -p merged_peaks
-
 ################################################
 ################################################
 ## LOAD LIBRARIES                             ##
@@ -300,6 +292,10 @@ if (file.exists(RLogFile) == FALSE) {
 ################################################
 ################################################
 ################################################
+
+## ADD SCATTERPLOTS ACROSS SAMPLES
+# library(GGally)
+# print(ggpairs(rld))
 
 ################################################
 ################################################

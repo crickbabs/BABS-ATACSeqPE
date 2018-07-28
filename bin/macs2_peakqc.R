@@ -11,8 +11,6 @@ library(ggplot2)
 library(reshape2)
 library(scales)
 
-## PLOT VOLCANO PER SAMPLE? I.E. LOG2 FOLD-ENRICHMENT VS -LOG10(PADJ)?
-
 ################################################
 ################################################
 ## PARSE COMMAND-LINE PARAMETERS              ##
