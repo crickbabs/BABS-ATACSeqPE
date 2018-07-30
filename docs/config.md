@@ -1,34 +1,6 @@
-
-## Software requirements
-
-The software below is required to run the pipeline:
-
-|                                                                                  |                                                                       |                                                                  |
-|----------------------------------------------------------------------------------|-----------------------------------------------------------------------|------------------------------------------------------------------|
-| [nextflow](https://www.nextflow.io/)                                             | [cutadapt](http://cutadapt.readthedocs.io/en/stable/guide.html)       | [Kent_tools](http://hgdownload.soe.ucsc.edu/admin/exe/)          |
-| [R](https://www.r-project.org/)                                                  | [BWA](https://sourceforge.net/projects/bio-bwa/files/)                | [MACS2](https://github.com/taoliu/MACS)                          |
-| [Python](https://www.python.org/downloads/)                                      | [picard](https://broadinstitute.github.io/picard/)                    | [HOMER](http://homer.ucsd.edu/homer/download.html)               |
-| [Java](https://java.com/en/download/)                                            | [SAMtools](https://sourceforge.net/projects/samtools/files/samtools/) | [featureCounts](http://bioinf.wehi.edu.au/featureCounts/)        |
-| [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)             | [BamTools](https://github.com/pezmaster31/bamtools)                   | [Pysam](http://pysam.readthedocs.io/en/latest/installation.html) |
-| [FastQ Screen](https://www.bioinformatics.babraham.ac.uk/projects/fastq_screen/) | [BEDTools](https://github.com/arq5x/bedtools2/)                       | [MultiQC](http://multiqc.info/)                                  |
-
-### R libraries
-
-The following R libraries may need to be installed if unavailable. You can test this be loading the `R` module (if required), typing `R` at the command prompt and attempting to load the packages below e.g. `> library(optparse)` and so on. The pipeline assumes the correct R library path is set in order find the installed packages. If not, you can set this in the `.Rprofile` file in the user home directory or add a line which extends the `R` [libPaths](https://stat.ethz.ch/R-manual/R-devel/library/base/html/libPaths.html) in the executable R scripts in the `bin/` directory.
-
-|                                                                         |                                                                         |                                                                                 |
-|-------------------------------------------------------------------------|-------------------------------------------------------------------------|---------------------------------------------------------------------------------|
-| [optparse](https://cran.r-project.org/web/packages/optparse/index.html) | [scales](https://cran.r-project.org/web/packages/scales/index.html)     | [RColorBrewer](https://cran.r-project.org/web/packages/RColorBrewer/index.html) |
-| [ggplot2](https://ggplot2.tidyverse.org/)                               | [pheatmap](https://cran.r-project.org/web/packages/pheatmap/index.html) | [DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)       |
-| [reshape2](https://cran.r-project.org/web/packages/reshape2/index.html) | [lattice](https://cran.r-project.org/web/packages/lattice/index.html)   | [vsn](https://bioconductor.org/packages/release/bioc/html/vsn.html)             |
-
-### Linux utilities
-
-Standard linux tools including `cut`, `awk`, `sort`, `mv`, `touch`, `echo`, `mkdir`, `paste`, `cp`, `ln`, `grep` are also used throughout the pipeline.
-
 ## Software configuration
 
-Depending on where and how you would like to run the pipeline, nextflow needs to be configured to use the software and associated versions.
+Depending on where and how you would like to run the pipeline, nextflow needs to be configured to use the [software](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/docs/config.md#software-requirements) and associated versions.
 
 ### Environment modules
 
@@ -67,6 +39,33 @@ Nextflow offers the flexibility to store parameters required by the pipeline in 
 | [`conf/fastq_screen.conf.txt`](https://github.com/crickbabs/BABS-ATACSeqPE/tree/master/conf/fastq_screen.conf.txt)     | Config file specifying paths to bowtie2 indexed genomes that will be used for contaminant screening. If you want the pipeline to run `fastq_screen` this file will need to be customised to reflect the paths to the pre-created bowtie2 indices with which to run FastQ Screen.                                                                                                                                                                                                                                 |
 | [`conf/multiqc_config.yaml`](https://github.com/crickbabs/BABS-ATACSeqPE/tree/master/conf/multiqc_config.yaml)         | Config file for generating customised MultiQC report for BABS-ATACSeqPE pipeline. You wont need to customise this file unless you want to change which aspects of the QC are reported by MultiQC.                                                                                                                                                                                                                                                    |
 | [`conf/bamtools_filter_pe.json`](https://github.com/crickbabs/BABS-ATACSeqPE/tree/master/conf/bamtools_filter_pe.json) | Config file used by BamTools for filtering. You wont need to customise this file unless you want to amend specific aspects of the read filtering criteria.                                                                                                                                                                                                                                                                                         |
+
+## Software requirements
+
+The software below is required to run the pipeline:
+
+|                                                                                  |                                                                       |                                                                  |
+|----------------------------------------------------------------------------------|-----------------------------------------------------------------------|------------------------------------------------------------------|
+| [nextflow](https://www.nextflow.io/)                                             | [cutadapt](http://cutadapt.readthedocs.io/en/stable/guide.html)       | [Kent_tools](http://hgdownload.soe.ucsc.edu/admin/exe/)          |
+| [R](https://www.r-project.org/)                                                  | [BWA](https://sourceforge.net/projects/bio-bwa/files/)                | [MACS2](https://github.com/taoliu/MACS)                          |
+| [Python](https://www.python.org/downloads/)                                      | [picard](https://broadinstitute.github.io/picard/)                    | [HOMER](http://homer.ucsd.edu/homer/download.html)               |
+| [Java](https://java.com/en/download/)                                            | [SAMtools](https://sourceforge.net/projects/samtools/files/samtools/) | [featureCounts](http://bioinf.wehi.edu.au/featureCounts/)        |
+| [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)             | [BamTools](https://github.com/pezmaster31/bamtools)                   | [Pysam](http://pysam.readthedocs.io/en/latest/installation.html) |
+| [FastQ Screen](https://www.bioinformatics.babraham.ac.uk/projects/fastq_screen/) | [BEDTools](https://github.com/arq5x/bedtools2/)                       | [MultiQC](http://multiqc.info/)                                  |
+
+### R libraries
+
+The following R libraries may need to be installed if unavailable. You can test this be loading the `R` module (if required), typing `R` at the command prompt and attempting to load the packages below e.g. `> library(optparse)` and so on. The pipeline assumes the correct R library path is set in order find the installed packages. If not, you can set this in the `.Rprofile` file in the user home directory or add a line which extends the `R` [libPaths](https://stat.ethz.ch/R-manual/R-devel/library/base/html/libPaths.html) in the executable R scripts in the `bin/` directory.
+
+|                                                                         |                                                                         |                                                                                 |
+|-------------------------------------------------------------------------|-------------------------------------------------------------------------|---------------------------------------------------------------------------------|
+| [optparse](https://cran.r-project.org/web/packages/optparse/index.html) | [scales](https://cran.r-project.org/web/packages/scales/index.html)     | [RColorBrewer](https://cran.r-project.org/web/packages/RColorBrewer/index.html) |
+| [ggplot2](https://ggplot2.tidyverse.org/)                               | [pheatmap](https://cran.r-project.org/web/packages/pheatmap/index.html) | [DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)       |
+| [reshape2](https://cran.r-project.org/web/packages/reshape2/index.html) | [lattice](https://cran.r-project.org/web/packages/lattice/index.html)   | [vsn](https://bioconductor.org/packages/release/bioc/html/vsn.html)             |
+
+### Linux utilities
+
+Standard linux tools including `cut`, `awk`, `sort`, `mv`, `touch`, `echo`, `mkdir`, `paste`, `cp`, `ln`, `grep` are also used throughout the pipeline.
 
 <!---
 Add information on how to customise each of these files to get pipeline running see NGI-RNASeq

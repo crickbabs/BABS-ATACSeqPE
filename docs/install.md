@@ -15,13 +15,13 @@ See [nextflow.io](https://www.nextflow.io/) for further information on how to in
 
 There are various ways in which you can obtain the pipeline itself:
 
-### Via Nextflow
+### Nextflow
 
 If you have an internet connection at the command-line when running the pipeline, Nextflow will automatically download the pipeline if `crickbabs/BABS-ATASeqPE` is specified as the pipeline name.
 
-### Via Git
+### Git
 
-If you have [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) installed, you can obtain the pipeline by running the following command in a directory where you want to perform the analysis:
+If you need to customise the pipeline you can obtain a local copy of the pipeline by running the following [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) command in a directory where you want to perform the analysis:
 
 ```bash
 git clone https://github.com/crickbabs/BABS-ATACSeqPE
@@ -32,6 +32,10 @@ The nextflow pipeline and associated config and executable files will appear in 
 ```bash
 cd BABS-ATACSeqPE
 ```
+```
+
+<!---
+RESTRUCTURE DOCUMENTATION ABOVE FOR ONLINE AND OFFLINE USE
 
 ### Offline use
 
@@ -40,9 +44,5 @@ wget https://github.com/crickbabs/BABS-ATACSeqPE/archive/master.zip
 unzip master.zip -d nf-pipelines/
 cd nf-pipelines/
 nextflow run BABS-ATACSeqPE-master
-```
 
-<!---
-RESTRUCTURE DOCUMENTATION ABOVE FOR ONLINE AND OFFLINE USE
-TEST OFFLINE USAGE
 -->
