@@ -32,7 +32,6 @@ The nextflow pipeline and associated config and executable files will appear in 
 ```bash
 cd BABS-ATACSeqPE
 ```
-```
 
 <!---
 RESTRUCTURE DOCUMENTATION ABOVE FOR ONLINE AND OFFLINE USE
