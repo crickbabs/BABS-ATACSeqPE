@@ -1,5 +1,5 @@
 ## You can use this file to create a conda environment for this pipeline.
-## See docs: https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/docs/software.md
+## See docs: https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/docs/config.md
 
 name: BABS-ATACSeqPE-1.0
 channels:

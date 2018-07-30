@@ -41,10 +41,10 @@ The pipeline was written by [The Bioinformatics & Biostatistics Group](https://w
 
 The documentation for the pipeline can be found in the `docs/` directory:
 
-1. [Software requirements](docs/software.md)
-2. [Reference genome](docs/genome.md)
-3. [Design file](docs/design.md)
-4. [Configuration](docs/config.md)
+1. [Installation](docs/install.md)
+2. [Pipeline configuration](docs/config.md)
+3. [Reference genome](docs/genome.md)
+4. [Design file](docs/design.md)
 5. [Running the pipeline](docs/usage.md)
 6. [Output and interpretation of results](docs/output.md)
 7. [Troubleshooting](docs/troubleshooting.md)

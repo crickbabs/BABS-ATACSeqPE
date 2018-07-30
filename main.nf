@@ -562,38 +562,20 @@ process markdup {
 
     script:
         out_prefix="${sampleid}.mkD"
-        if ( workflow.profile == 'conda' ) {
-            """
-            picard MarkDuplicates \\
-                   VALIDATION_STRINGENCY=LENIENT \\
-                   REMOVE_DUPLICATES=false \\
-                   ASSUME_SORTED=true \\
-                   TMP_DIR=tmp \\
-                   INPUT=${bam[0]} \\
-                   OUTPUT=${out_prefix}.sorted.bam \\
-                   METRICS_FILE=${out_prefix}.MarkDuplicates.metrics.txt \\
-                   >> ${out_prefix}.MarkDuplicates.sysout 2>&1
-            samtools index ${out_prefix}.sorted.bam
-            samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
-            samtools idxstats ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.idxstats
-            """
-        } else {
-            """
-            PICARD=`which picard.jar`
-            java -Xmx${task.memory.toString().split(" ")[0]}g -jar \$PICARD MarkDuplicates \\
-                 VALIDATION_STRINGENCY=LENIENT \\
-                 REMOVE_DUPLICATES=false \\
-                 ASSUME_SORTED=true \\
-                 TMP_DIR=tmp \\
-                 INPUT=${bam[0]} \\
-                 OUTPUT=${out_prefix}.sorted.bam \\
-                 METRICS_FILE=${out_prefix}.MarkDuplicates.metrics.txt \\
-                 >> ${out_prefix}.MarkDuplicates.sysout 2>&1
-            samtools index ${out_prefix}.sorted.bam
-            samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
-            samtools idxstats ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.idxstats
-            """
-        }
+        """
+        picard MarkDuplicates \\
+               VALIDATION_STRINGENCY=LENIENT \\
+               REMOVE_DUPLICATES=false \\
+               ASSUME_SORTED=true \\
+               TMP_DIR=tmp \\
+               INPUT=${bam[0]} \\
+               OUTPUT=${out_prefix}.sorted.bam \\
+               METRICS_FILE=${out_prefix}.MarkDuplicates.metrics.txt \\
+               >> ${out_prefix}.MarkDuplicates.sysout 2>&1
+        samtools index ${out_prefix}.sorted.bam
+        samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
+        samtools idxstats ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.idxstats
+        """
 }
 
 // RUN PICARD COLLECTMULTIPLE METRICS ON COORDINATE SORTED BAM
@@ -620,28 +602,15 @@ process markdup_collectmetrics {
 
     script:
         out_prefix="${sampleid}.mkD"
-        if ( workflow.profile == 'conda' ) {
-            """
-            picard CollectMultipleMetrics \\
-                   VALIDATION_STRINGENCY=LENIENT \\
-                   TMP_DIR=tmp \\
-                   INPUT=${bam[0]} \\
-                   OUTPUT=${out_prefix}.CollectMultipleMetrics \\
-                   REFERENCE_SEQUENCE=${fasta} \\
-                   >> ${out_prefix}.CollectMultipleMetrics.sysout 2>&1
-            """
-        } else {
-            """
-            PICARD=`which picard.jar`
-            java -Xmx${task.memory.toString().split(" ")[0]}g -jar \$PICARD CollectMultipleMetrics \\
-                 VALIDATION_STRINGENCY=LENIENT \\
-                 TMP_DIR=tmp \\
-                 INPUT=${bam[0]} \\
-                 OUTPUT=${out_prefix}.CollectMultipleMetrics \\
-                 REFERENCE_SEQUENCE=${fasta} \\
-                 >> ${out_prefix}.CollectMultipleMetrics.sysout 2>&1
-            """
-        }
+        """
+        picard CollectMultipleMetrics \\
+               VALIDATION_STRINGENCY=LENIENT \\
+               TMP_DIR=tmp \\
+               INPUT=${bam[0]} \\
+               OUTPUT=${out_prefix}.CollectMultipleMetrics \\
+               REFERENCE_SEQUENCE=${fasta} \\
+               >> ${out_prefix}.CollectMultipleMetrics.sysout 2>&1
+        """
 }
 
 // FILTER BAM FILE TO KEEP (1) UNIQUELY MAPPED, (2) PRIMARY ALIGNMENT, (3) PROPERLY-PAIRED, (4) NON-MITOCHONDRIAL
@@ -790,32 +759,17 @@ process merge_replicate {
         bam_files = bams.findAll { it.toString().endsWith('.bam') }.sort()
         flagstat_files = bams.findAll { it.toString().endsWith('.flagstat') }.sort()
         if (bam_files.size() > 1) {
-            if ( workflow.profile == 'conda' ) {
-                """
-                picard MergeSamFiles \\
-                       VALIDATION_STRINGENCY=LENIENT \\
-                       SORT_ORDER=coordinate \\
-                       TMP_DIR=tmp \\
-                       ${'INPUT='+bam_files.join(' INPUT=')} \\
-                       OUTPUT=${out_prefix}.sorted.bam \\
-                       >> ${out_prefix}.MergeSamFiles.sysout 2>&1
-                samtools index ${out_prefix}.sorted.bam
-                samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
-                """
-            } else {
-                """
-                PICARD=`which picard.jar`
-                java -Xmx${task.memory.toString().split(" ")[0]}g -jar \$PICARD MergeSamFiles \\
-                     VALIDATION_STRINGENCY=LENIENT \\
-                     SORT_ORDER=coordinate \\
-                     TMP_DIR=tmp \\
-                     ${'INPUT='+bam_files.join(' INPUT=')} \\
-                     OUTPUT=${out_prefix}.sorted.bam \\
-                     >> ${out_prefix}.MergeSamFiles.sysout 2>&1
-                samtools index ${out_prefix}.sorted.bam
-                samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
-                """
-            }
+            """
+            picard MergeSamFiles \\
+                   VALIDATION_STRINGENCY=LENIENT \\
+                   SORT_ORDER=coordinate \\
+                   TMP_DIR=tmp \\
+                   ${'INPUT='+bam_files.join(' INPUT=')} \\
+                   OUTPUT=${out_prefix}.sorted.bam \\
+                   >> ${out_prefix}.MergeSamFiles.sysout 2>&1
+            samtools index ${out_prefix}.sorted.bam
+            samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
+            """
         } else {
             """
             touch ${out_prefix}.sorted.bam
@@ -855,36 +809,19 @@ process merge_replicate_markdup {
         bam_files = orphan_bams.findAll { it.toString().endsWith('.bam') }.sort()
         flagstat_files = orphan_bams.findAll { it.toString().endsWith('.flagstat') }.sort()
         if (bam_files.size() > 1) {
-            if ( workflow.profile == 'conda' ) {
-                """
-                picard MarkDuplicates \\
-                       VALIDATION_STRINGENCY=LENIENT \\
-                       REMOVE_DUPLICATES=false \\
-                       ASSUME_SORTED=true \\
-                       TMP_DIR=tmp \\
-                       INPUT=${merged_bam[0]} \\
-                       OUTPUT=${out_prefix}.sorted.bam \\
-                       METRICS_FILE=${out_prefix}.MarkDuplicates.metrics.txt \\
-                       >> ${out_prefix}.MarkDuplicates.sysout 2>&1
-                samtools index ${out_prefix}.sorted.bam
-                samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
-                """
-            } else {
-                """
-                PICARD=`which picard.jar`
-                java -Xmx${task.memory.toString().split(" ")[0]}g -jar \$PICARD MarkDuplicates \\
-                     VALIDATION_STRINGENCY=LENIENT \\
-                     REMOVE_DUPLICATES=false \\
-                     ASSUME_SORTED=true \\
-                     TMP_DIR=tmp \\
-                     INPUT=${merged_bam[0]} \\
-                     OUTPUT=${out_prefix}.sorted.bam \\
-                     METRICS_FILE=${out_prefix}.MarkDuplicates.metrics.txt \\
-                     >> ${out_prefix}.MarkDuplicates.sysout 2>&1
-                samtools index ${out_prefix}.sorted.bam
-                samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
-                """
-            }
+            """
+            picard MarkDuplicates \\
+                   VALIDATION_STRINGENCY=LENIENT \\
+                   REMOVE_DUPLICATES=false \\
+                   ASSUME_SORTED=true \\
+                   TMP_DIR=tmp \\
+                   INPUT=${merged_bam[0]} \\
+                   OUTPUT=${out_prefix}.sorted.bam \\
+                   METRICS_FILE=${out_prefix}.MarkDuplicates.metrics.txt \\
+                   >> ${out_prefix}.MarkDuplicates.sysout 2>&1
+            samtools index ${out_prefix}.sorted.bam
+            samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
+            """
         } else {
             """
             touch ${out_prefix}.sorted.bam
@@ -1354,32 +1291,17 @@ process merge_sample {
         bam_files = bams.findAll { it.toString().endsWith('.bam') }.sort()
         flagstat_files = bams.findAll { it.toString().endsWith('.flagstat') }.sort()
         if (bam_files.size() > 1) {
-            if ( workflow.profile == 'conda' ) {
-                """
-                picard MergeSamFiles \\
-                     VALIDATION_STRINGENCY=LENIENT \\
-                     SORT_ORDER=coordinate \\
-                     TMP_DIR=tmp \\
-                     ${'INPUT='+bam_files.join(' INPUT=')} \\
-                     OUTPUT=${out_prefix}.sorted.bam \\
-                     >> ${out_prefix}.MergeSamFiles.sysout 2>&1
-                samtools index ${out_prefix}.sorted.bam
-                samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
-                """
-            } else {
-                """
-                PICARD=`which picard.jar`
-                java -Xmx${task.memory.toString().split(" ")[0]}g -jar \$PICARD MergeSamFiles \\
-                     VALIDATION_STRINGENCY=LENIENT \\
-                     SORT_ORDER=coordinate \\
-                     TMP_DIR=tmp \\
-                     ${'INPUT='+bam_files.join(' INPUT=')} \\
-                     OUTPUT=${out_prefix}.sorted.bam \\
-                     >> ${out_prefix}.MergeSamFiles.sysout 2>&1
-                samtools index ${out_prefix}.sorted.bam
-                samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
-                """
-            }
+            """
+            picard MergeSamFiles \\
+                 VALIDATION_STRINGENCY=LENIENT \\
+                 SORT_ORDER=coordinate \\
+                 TMP_DIR=tmp \\
+                 ${'INPUT='+bam_files.join(' INPUT=')} \\
+                 OUTPUT=${out_prefix}.sorted.bam \\
+                 >> ${out_prefix}.MergeSamFiles.sysout 2>&1
+            samtools index ${out_prefix}.sorted.bam
+            samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
+            """
         } else {
             """
             touch ${out_prefix}.sorted.bam
@@ -1419,36 +1341,19 @@ process merge_sample_markdup {
         bam_files = orphan_bams.findAll { it.toString().endsWith('.bam') }.sort()
         flagstat_files = orphan_bams.findAll { it.toString().endsWith('.flagstat') }.sort()
         if (bam_files.size() > 1) {
-            if ( workflow.profile == 'conda' ) {
-                """
-                picard MarkDuplicates \\
-                       VALIDATION_STRINGENCY=LENIENT \\
-                       REMOVE_DUPLICATES=false \\
-                       ASSUME_SORTED=true \\
-                       TMP_DIR=tmp \\
-                       INPUT=${merged_bam[0]} \\
-                       OUTPUT=${out_prefix}.sorted.bam \\
-                       METRICS_FILE=${out_prefix}.MarkDuplicates.metrics.txt \\
-                       >> ${out_prefix}.MarkDuplicates.sysout 2>&1
-                samtools index ${out_prefix}.sorted.bam
-                samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
-                """
-            } else {
-                """
-                PICARD=`which picard.jar`
-                java -Xmx${task.memory.toString().split(" ")[0]}g -jar \$PICARD MarkDuplicates \\
-                     VALIDATION_STRINGENCY=LENIENT \\
-                     REMOVE_DUPLICATES=false \\
-                     ASSUME_SORTED=true \\
-                     TMP_DIR=tmp \\
-                     INPUT=${merged_bam[0]} \\
-                     OUTPUT=${out_prefix}.sorted.bam \\
-                     METRICS_FILE=${out_prefix}.MarkDuplicates.metrics.txt \\
-                     >> ${out_prefix}.MarkDuplicates.sysout 2>&1
-                samtools index ${out_prefix}.sorted.bam
-                samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
-                """
-            }
+            """
+            picard MarkDuplicates \\
+                   VALIDATION_STRINGENCY=LENIENT \\
+                   REMOVE_DUPLICATES=false \\
+                   ASSUME_SORTED=true \\
+                   TMP_DIR=tmp \\
+                   INPUT=${merged_bam[0]} \\
+                   OUTPUT=${out_prefix}.sorted.bam \\
+                   METRICS_FILE=${out_prefix}.MarkDuplicates.metrics.txt \\
+                   >> ${out_prefix}.MarkDuplicates.sysout 2>&1
+            samtools index ${out_prefix}.sorted.bam
+            samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
+            """
         } else {
             """
             touch ${out_prefix}.sorted.bam

@@ -14,8 +14,8 @@ treatment,2,2,AEG588A5_S4_L002_R1_001.fastq.gz,AEG588A5_S4_L002_R2_001.fastq.gz
 
 | Column      | Description                                                                                                                               |
 |-------------|-------------------------------------------------------------------------------------------------------------------------------------------|
-| `sample`    | Group identifier for sample                                                                                                               |
-| `replicate` | Integer representing replicate number                                                                                                     |
+| `sample`    | Group identifier for sample.                                                                                                              |
+| `replicate` | Integer representing replicate number.                                                                                                    |
 | `run`       | Integer representing the number of times the same library has been sequenced. This will be used later for merging at the replicate-level. |
 | `fastq_1`   | Full path to FastQ file for read 1. File has to be zipped and have the extension ".fastq.gz".                                             |
 | `fastq_2`   | Full path to FastQ file for read 2. File has to be zipped and have the extension ".fastq.gz".                                             |
