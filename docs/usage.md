@@ -1,7 +1,7 @@
 
 ## Run pipeline
 
-When you have [installed](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/docs/install.md) and [configured](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/docs/config.md) the pipeline, [prepared the reference genome](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/docs/genome.md), and [created a design file](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/docs/design.md) you can run it with the command below in the top-level directory of the pipeline:
+When you have [installed](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/docs/install.md) and [configured](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/docs/config.md) the pipeline, prepared the [reference genome](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/docs/genome.md), and [created a design file](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/docs/design.md) you can run it with the command below in the top-level directory of the pipeline:
 
 ```bash
 nextflow run main.nf --design <DESIGN_FILE_PATH> --genome <GENOME_NAME> -profile <PROFILE_NAME>

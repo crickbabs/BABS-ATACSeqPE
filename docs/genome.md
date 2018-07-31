@@ -24,8 +24,6 @@ or you can edit the [genomes.config](https://github.com/crickbabs/BABS-ATACSeqPE
 nextflow run main.nf --design design.csv --genome hg19 -profile babs_modules
 ```
 
-The `genome_base` variable in the [`nextflow.config`](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/nextflow.config) file will also need to be customised to reflect the top-level directory where the genomes are stored on your system.
-
 ### Indexing genome
 
 The fasta file will need to be indexed with SAMtools and BWA before running the pipeline.
