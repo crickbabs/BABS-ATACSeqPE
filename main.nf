@@ -33,19 +33,18 @@ def helpMessage() {
     Usage:
     The typical command for running the pipeline is as follows:
 
-    nextflow run main.nf --design design.csv --genome hg19 -profile babs_modules
+    nextflow run main.nf --design design.csv --genome hg19 -profile conda
 
     Mandatory arguments:
-      --design                      Comma separted file containing information about the samples (see README)
+      --design                      Comma separted file containing information about the samples in the experiment (see README.md)
       --genome                      Genome shortname (e.g. hg19)
-      -profile                      Hardware config to use e.g. babs_modules,conda
+      -profile                      Hardware config to use i.e. conda, babs_modules, standard
 
-    References:                     If not specified in the configuration file or you wish to overwrite any of the references
+    References:                     If not specified in the configuration file or you wish to overwrite any of the reference parameters
       --fasta                       Path to Fasta reference file containing all chromosomes/contigs
-      --chrom_size_file             Path to tab-delimited file with two columns i.e. chrom\tchrom_size
       --gtf                         Path to GTF file
-      --bwa_index                   Path to BWA index
       --mito_name                   Name of Mitochondrial chomosome in genome fasta (e.g. chrM)
+      --bwa_index                   Path to BWA index
       --genome_mask                 BED file specifying target regions for analysis. This excludes problematic genomic loci
       --macs_genome_size            Effective genome size parameter required by MACS2
 
@@ -83,7 +82,6 @@ params.design = false
 params.genome = false
 params.profile = false
 params.fasta = params.genome ? params.genomes[ params.genome ].fasta ?: false : false
-params.chrom_size_file = params.genome ? params.genomes[ params.genome ].chrom_size_file ?: false : false
 params.gtf = params.genome ? params.genomes[ params.genome ].gtf ?: false : false
 params.mito_name = params.genome ? params.genomes[ params.genome ].mito_name ?: false : false
 params.bwa_index = params.genome ? params.genomes[ params.genome ].bwa_index ?: false : false
