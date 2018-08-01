@@ -8,6 +8,18 @@ A [Nextflow](https://www.nextflow.io/) pipeline for processing paired-end Illumi
 
 The pipeline was written by [The Bioinformatics & Biostatistics Group](https://www.crick.ac.uk/research/science-technology-platforms/bioinformatics-and-biostatistics/) at [The Francis Crick Institute](https://www.crick.ac.uk/), London.
 
+## Documentation
+
+The documentation for the pipeline can be found in the `docs/` directory:
+
+1. [Installation](docs/install.md)
+2. [Pipeline configuration](docs/config.md)
+3. [Reference genome](docs/genome.md)
+4. [Design file](docs/design.md)
+5. [Running the pipeline](docs/usage.md)
+6. [Output and interpretation of results](docs/output.md)
+7. [Troubleshooting](docs/troubleshooting.md)
+
 ## Pipeline summary
 
 1. Raw read QC ([FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/),[Fastq Screen](https://www.bioinformatics.babraham.ac.uk/projects/fastq_screen/))
@@ -36,20 +48,6 @@ The pipeline was written by [The Bioinformatics & Biostatistics Group](https://w
     * Differential binding analysis, PCA and clustering ([R](https://www.r-project.org/),[DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html))
 7. Create IGV session file containing bigWig tracks, peaks and differential sites for data visualisation ([IGV](https://software.broadinstitute.org/software/igv/)).
 8. Collect and present QC at the raw read, alignment and peak-level ([MultiQC](http://multiqc.info/),[R](https://www.r-project.org/))
-
-## Documentation
-
-The documentation for the pipeline can be found in the `docs/` directory:
-
-1. [Installation](docs/install.md)
-2. [Pipeline configuration](docs/config.md)
-3. [Reference genome](docs/genome.md)
-4. [Design file](docs/design.md)
-5. [Running the pipeline](docs/usage.md)
-6. [Output and interpretation of results](docs/output.md)
-7. [Troubleshooting](docs/troubleshooting.md)
-
-## Analysis Pipeline
 
 # ![BABS-ATACSeqPE directed acyclic graph](https://raw.githubusercontent.com/crickbabs/BABS-ATACSeqPE/master/docs/images/BABS-ATACSeqPE_dag.png)
 
