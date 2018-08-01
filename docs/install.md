@@ -1,7 +1,7 @@
 
-## Load/Install Nextflow
+## Install Nextflow
 
-To run nextflow it needs to be executable on the command-line. On an environment module system such as the one at The Francis Crick Institute this can be achieved by running the following command:
+To run Nextflow it needs to be executable on the command-line. On an environment module system such as the one at The Francis Crick Institute this can be achieved by running the following command:
 
 ```bash
 module load nextflow/0.30.2
@@ -19,7 +19,7 @@ There are various ways in which you can obtain the pipeline itself, however we r
 git clone https://github.com/crickbabs/BABS-ATACSeqPE
 ```
 
-The nextflow pipeline and associated config and executable files will appear in the `BABS-ATACSeqPE/` directory.
+The Nextflow pipeline and associated config and executable files will appear in the `BABS-ATACSeqPE/` directory.
 
 ```bash
 cd BABS-ATACSeqPE
