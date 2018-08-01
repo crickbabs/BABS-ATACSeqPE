@@ -8,3 +8,4 @@ module use /camp/apps/eb/modules/all
  
 module use /camp/apps/misc/stp/babs/manual/modules/all
 module use /camp/apps/misc/stp/babs/easybuild/modules/all
+
