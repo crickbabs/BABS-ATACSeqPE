@@ -10,7 +10,7 @@
 		## - FIRST SIX COLUMNS OF FEATURECOUNTS_FILE SHOULD BE INTERVAL INFO. REMAINDER OF COLUMNS SHOULD BE SAMPLES-SPECIFIC COUNTS.
 		## - SAMPLE NAMES HAVE TO END IN "_R1" REPRESENTING REPLICATE ID. LAST 3 CHARACTERS OF SAMPLE NAME WILL BE TRIMMED TO OBTAIN GROUP ID FOR DESEQ2 COMPARISONS.
 		## - BAM_SUFFIX IS PORTION OF FILENAME AFTER SAMPLE NAME IN FEATURECOUNTS COLUMN SAMPLE NAMES E.G. ".rmDup.bam" if "DRUG_R1.rmDup.bam"
-		## - PACKAGES BELOW NEED TO BE INSTALLED
+		## - PACKAGES BELOW NEED TO BE AVAILABLE TO LOAD WHEN RUNNING R
 
 ################################################
 ################################################
@@ -42,7 +42,7 @@ opt <- parse_args(opt_parser)
 
 if (is.null(opt$featurecount_file)){
 		print_help(opt_parser)
-		stop("Please provide featurecount file", call.=FALSE)
+		stop("Please provide featurecount file.", call.=FALSE)
 }
 if (is.null(opt$bam_suffix)){
 		print_help(opt_parser)
@@ -292,31 +292,3 @@ if (file.exists(RLogFile) == FALSE) {
 ################################################
 ################################################
 ################################################
-
-## ADD SCATTERPLOTS ACROSS SAMPLES
-# library(GGally)
-# print(ggpairs(rld))
-
-################################################
-################################################
-## 3D PCA       															##
-################################################
-################################################
-
-# library(rgl)
-# colour.vec <- c("#a6cee3","#1f78b4","#b2df8a","#33a02c","#fb9a99","#e31a1c","#fdbf6f","#ff7f00","#cab2d6","#6a3d9a","#ffff99","#b15928")
-# unique.colours <- colour.vec[1:length(unique(groups))]
-# names(unique.colours) <- unique(groups)
-# group.colours <- unique.colours[match(groups,names(unique.colours))]
-#
-# PCADir <- paste("pca",opt$outprefix,"/",sep='/')
-# if (file.exists(PCADir) == FALSE) {
-#    dir.create(PCADir,recursive=TRUE)
-# }
-# pc <- prcomp(assay(rld))
-# plot3d(pc$rotation[,1], pc$rotation[,2], pc$rotation[,3], type="s",xlab="X", ylab="Y", zlab="Z", col=group.colours)
-# text3d(pc$rotation[,1], pc$rotation[,2], pc$rotation[,3], adj=c(1.3,0.5), cex=0.7, (labels=rownames(pc$rotation)))
-# browseURL(paste("file://", writeWebGL(dir=file.path(PCADir), width=700), sep=""))
-
-## ADD R LIBRARY PATH
-# .libPaths(c(opt$R_LIB_PATH, .libPaths())
