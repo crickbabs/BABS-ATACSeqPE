@@ -1,5 +1,5 @@
 
-# ![BABS-ATACSeqPE](https://raw.githubusercontent.com/crickbabs/BABS-ATACSeqPE/master/docs/images/Picture1.png)
+# ![BABS-ATACSeqPE](https://raw.githubusercontent.com/crickbabs/BABS-ATACSeqPE/master/docs/images/Picture2.png)
 
 ## Introduction
 
