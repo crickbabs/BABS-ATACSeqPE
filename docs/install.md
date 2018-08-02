@@ -26,19 +26,3 @@ cd BABS-ATACSeqPE
 ```
 
 You can now configure the pipeline to run on a Linux system of your choice. See [Pipeline configuration](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/docs/config.md) and [Reference genome](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/docs/genome.md) sections.
-
-<!---
-
-### Nextflow
-
-If you have an internet connection at the command-line when running the pipeline, Nextflow will automatically download the pipeline if `crickbabs/BABS-ATASeqPE` is specified as the pipeline name.
-
-### Offline use
-
-```bash
-wget https://github.com/crickbabs/BABS-ATACSeqPE/archive/master.zip
-unzip master.zip -d nf-pipelines/
-cd nf-pipelines/
-nextflow run BABS-ATACSeqPE-master
-
--->

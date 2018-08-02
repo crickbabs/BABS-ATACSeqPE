@@ -69,7 +69,3 @@ The following R libraries may need to be installed if unavailable. You can test 
 ### Linux utilities
 
 Standard linux tools including `cut`, `awk`, `sort`, `mv`, `touch`, `echo`, `mkdir`, `paste`, `cp`, `ln`, `grep` are also used throughout the pipeline.
-
-<!---
-Add information on how to customise each of these files to get pipeline running see NGI-RNASeq
--->
