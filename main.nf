@@ -501,12 +501,6 @@ process bwa_bam {
 
     label 'lowcpu'
 
-    publishDir "${params.outdir}/align", mode: 'copy',
-                saveAs: {filename ->
-                            if (filename.endsWith(".flagstat")) "flagstat/$filename"
-                            else null
-                        }
-
     input:
     set val(sampleid), file(sam) from bwa_sampe_ch
 
@@ -618,12 +612,6 @@ process filter_bam {
     tag "$sampleid"
 
     label 'lowcpu'
-
-    publishDir "${params.outdir}/align", mode: 'copy',
-                saveAs: {filename ->
-                            if (filename.endsWith(".flagstat")) "flagstat/$filename"
-                            else null
-                        }
 
     input:
     set val(sampleid), file(bam) from markdup_filter_bam_ch
@@ -739,8 +727,7 @@ process merge_replicate {
 
     publishDir "${params.outdir}/align/mergeReplicate", mode: 'copy',
                 saveAs: {filename ->
-                            if (filename.endsWith(".flagstat")) "flagstat/$filename"
-                            else if (filename.endsWith(".sysout")) "sysout/$filename"
+                            if (filename.endsWith(".sysout")) "sysout/$filename"
                             else null
                         }
 
@@ -787,8 +774,7 @@ process merge_replicate_markdup {
 
     publishDir "${params.outdir}/align/mergeReplicate", mode: 'copy',
                 saveAs: {filename ->
-                            if (filename.endsWith(".flagstat")) "flagstat/$filename"
-                            else if (filename.endsWith(".sysout")) "sysout/$filename"
+                            if (filename.endsWith(".sysout")) "sysout/$filename"
                             else if (filename.endsWith(".metrics.txt")) "picard_metrics/$filename"
                             else null
                         }
@@ -1271,8 +1257,7 @@ process merge_sample {
 
     publishDir "${params.outdir}/align/mergeSample", mode: 'copy',
                 saveAs: {filename ->
-                            if (filename.endsWith(".flagstat")) "flagstat/$filename"
-                            else if (filename.endsWith(".sysout")) "sysout/$filename"
+                            if (filename.endsWith(".sysout")) "sysout/$filename"
                             else null
                         }
 
@@ -1319,8 +1304,7 @@ process merge_sample_markdup {
 
     publishDir "${params.outdir}/align/mergeSample", mode: 'copy',
                 saveAs: {filename ->
-                            if (filename.endsWith(".flagstat")) "flagstat/$filename"
-                            else if (filename.endsWith(".sysout")) "sysout/$filename"
+                            if (filename.endsWith(".sysout")) "sysout/$filename"
                             else if (filename.endsWith(".metrics.txt")) "picard_metrics/$filename"
                             else null
                         }
