@@ -54,10 +54,6 @@ The documentation for the pipeline can be found in the `docs/` directory:
 
 # ![BABS-ATACSeqPE directed acyclic graph](https://raw.githubusercontent.com/crickbabs/BABS-ATACSeqPE/master/docs/images/BABS-ATACSeqPE_dag.png)
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
-
 ## Credits
 
 The pipeline was written by the [The Bioinformatics & Biostatistics Group](https://www.crick.ac.uk/research/science-technology-platforms/bioinformatics-and-biostatistics/) at [The Francis Crick Institute](https://www.crick.ac.uk/), London.
@@ -65,3 +61,7 @@ The pipeline was written by the [The Bioinformatics & Biostatistics Group](https
 The pipeline was developed by [Harshil Patel](mailto:harshil.patel@crick.ac.uk), [Philip East](mailto:philip.east@crick.ac.uk) and [Nourdine Bah](mailto:nourdine.bah@crick.ac.uk).
 
 The [NGI-RNAseq](https://github.com/SciLifeLab/NGI-RNAseq) pipeline developed by Phil Ewels was used a template for this pipeline. Many thanks to Phil and the team at SciLifeLab. The help, tips and tricks provided by Paolo Di Tommaso were also invaluable. Thank you!
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
