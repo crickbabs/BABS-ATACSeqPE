@@ -9,7 +9,7 @@ The pipeline was written by [The Bioinformatics & Biostatistics Group](https://w
 
 ## Pipeline summary
 
-1. Raw read QC ([FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/), [Fastq Screen](https://www.bioinformatics.babraham.ac.uk/projects/fastq_screen/))
+1. Raw read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/), [`Fastq Screen`](https://www.bioinformatics.babraham.ac.uk/projects/fastq_screen/))
 2. Adapter trimming ([cutadapt](http://cutadapt.readthedocs.io/en/stable/installation.html))
 3. Alignment ([BWA](https://sourceforge.net/projects/bio-bwa/files/))
 4. Mark duplicates ([picard](https://broadinstitute.github.io/picard/))
