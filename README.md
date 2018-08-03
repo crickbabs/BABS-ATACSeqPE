@@ -15,7 +15,7 @@ The pipeline was written by [The Bioinformatics & Biostatistics Group](https://w
 4. Mark duplicates ([picard](https://broadinstitute.github.io/picard/))
 5. Filtering to remove
     * reads mapping to mitochondrial DNA ([SAMtools](https://sourceforge.net/projects/samtools/files/samtools/))
-    * reads mapping to blacklisted regions ([SAMtools](https://sourceforge.net/projects/samtools/files/samtools/))
+    * reads mapping to blacklisted regions ([SAMtools](https://sourceforge.net/projects/samtools/files/samtools/), [BEDTools](https://github.com/arq5x/bedtools2/))
     * reads that are unmapped ([SAMtools](https://sourceforge.net/projects/samtools/files/samtools/))
     * reads that map to multiple locations ([SAMtools](https://sourceforge.net/projects/samtools/files/samtools/))
     * reads that arent marked as properly paired ([SAMtools](https://sourceforge.net/projects/samtools/files/samtools/))
