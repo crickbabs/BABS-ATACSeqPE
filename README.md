@@ -26,6 +26,7 @@ The pipeline was written by [The Bioinformatics & Biostatistics Group](https://w
     * reads that map to different chromosomes ([`Pysam`](http://pysam.readthedocs.io/en/latest/installation.html))
     * reads where only one read of the pair fails the above criteria ([`Pysam`](http://pysam.readthedocs.io/en/latest/installation.html))
 6. Merge alignments at replicate and sample level ([`picard`](https://broadinstitute.github.io/picard/))
+    * Re-mark duplicates ([`picard`](https://broadinstitute.github.io/picard/))
     * Remove duplicate reads ([`SAMtools`](https://sourceforge.net/projects/samtools/files/samtools/))
     * Create normalised bigWig files scaled to 1 million mapped read pairs ([`BEDTools`](https://github.com/arq5x/bedtools2/), [`wigToBigWig`](http://hgdownload.soe.ucsc.edu/admin/exe/))
     * Call broad peaks ([`MACS2`](https://github.com/taoliu/MACS))
