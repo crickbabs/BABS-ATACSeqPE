@@ -60,11 +60,13 @@ The software below is required to run the pipeline:
 
 The following R libraries may need to be installed if unavailable. You can test this be loading the `R` module (if required), typing `R` at the command prompt and attempting to load the packages below e.g. `> library(optparse)` and so on. The pipeline assumes the correct R library path is set in order find the installed packages. If not, you can set this in the `.Rprofile` file in the user home directory or add a line which extends the `R` [libPaths](https://stat.ethz.ch/R-manual/R-devel/library/base/html/libPaths.html) in the executable R scripts in the `bin/` directory.
 
-|                                                                         |                                                                         |                                                                                 |
-|-------------------------------------------------------------------------|-------------------------------------------------------------------------|---------------------------------------------------------------------------------|
-| [optparse](https://cran.r-project.org/web/packages/optparse/index.html) | [scales](https://cran.r-project.org/web/packages/scales/index.html)     | [RColorBrewer](https://cran.r-project.org/web/packages/RColorBrewer/index.html) |
-| [ggplot2](https://ggplot2.tidyverse.org/)                               | [pheatmap](https://cran.r-project.org/web/packages/pheatmap/index.html) | [DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)       |
-| [reshape2](https://cran.r-project.org/web/packages/reshape2/index.html) | [lattice](https://cran.r-project.org/web/packages/lattice/index.html)   | [vsn](https://bioconductor.org/packages/release/bioc/html/vsn.html)             |
+|                                                                         |                                                                                 |
+|-------------------------------------------------------------------------|---------------------------------------------------------------------------------|
+| [optparse](https://cran.r-project.org/web/packages/optparse/index.html) | [RColorBrewer](https://cran.r-project.org/web/packages/RColorBrewer/index.html) |
+| [ggplot2](https://ggplot2.tidyverse.org/)                               | [lattice](https://cran.r-project.org/web/packages/lattice/index.html)           |
+| [reshape2](https://cran.r-project.org/web/packages/reshape2/index.html) | [UpSetR](https://cran.r-project.org/web/packages/UpSetR/README.html)            |
+| [scales](https://cran.r-project.org/web/packages/scales/index.html)     | [DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)       |
+| [pheatmap](https://cran.r-project.org/web/packages/pheatmap/index.html) | [vsn](https://bioconductor.org/packages/release/bioc/html/vsn.html)             |
 
 ### Linux utilities
 

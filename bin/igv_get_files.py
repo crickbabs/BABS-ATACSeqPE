@@ -18,7 +18,7 @@ import funcs
 ############################################
 
 Description = 'Create a tab-delimited file with "file_path\tcolour" for IGV. This will be specific to directory structure of BABS-ATACSeqPE nextflow pipeline.'
-Epilog = """Example usage: python get_files_for_igv.py <RESULTS_DIR> <OUT_FILE>"""
+Epilog = """Example usage: python igv_get_files.py <RESULTS_DIR> <OUT_FILE>"""
 argParser = argparse.ArgumentParser(description=Description, epilog=Epilog)
 
 ## REQUIRED PARAMETERS
@@ -32,7 +32,7 @@ args = argParser.parse_args()
 ############################################
 ############################################
 
-def get_files_for_igv(ResultsDir,OutFile):
+def igv_get_files(ResultsDir,OutFile):
 
     funcs.makedir(os.path.dirname(OutFile))
 
@@ -90,7 +90,7 @@ def get_files_for_igv(ResultsDir,OutFile):
 ############################################
 ############################################
 
-get_files_for_igv(ResultsDir=args.RESULTS_DIR,OutFile=args.OUT_FILE)
+igv_get_files(ResultsDir=args.RESULTS_DIR,OutFile=args.OUT_FILE)
 
 ############################################
 ############################################

@@ -555,7 +555,8 @@ process markdup {
     script:
         out_prefix="${sampleid}.mkD"
         """
-        picard MarkDuplicates \\
+        picard -Xmx${task.memory.toString().split(" ")[0]}g \\
+               MarkDuplicates \\
                VALIDATION_STRINGENCY=LENIENT \\
                REMOVE_DUPLICATES=false \\
                ASSUME_SORTED=true \\
@@ -595,7 +596,8 @@ process markdup_collectmetrics {
     script:
         out_prefix="${sampleid}.mkD"
         """
-        picard CollectMultipleMetrics \\
+        picard -Xmx${task.memory.toString().split(" ")[0]}g \\
+               CollectMultipleMetrics \\
                VALIDATION_STRINGENCY=LENIENT \\
                TMP_DIR=tmp \\
                INPUT=${bam[0]} \\
@@ -663,7 +665,7 @@ process rm_orphan {
     script:
         out_prefix="${sampleid}.mkD.flT"
         """
-        python $baseDir/bin/rm_orphan_from_bampe.py ${bam} ${out_prefix}.bam --excl_diff_chrom
+        python $baseDir/bin/bampe_rm_orphan.py ${bam} ${out_prefix}.bam --excl_diff_chrom
         """
 }
 
@@ -745,7 +747,8 @@ process merge_replicate {
         flagstat_files = bams.findAll { it.toString().endsWith('.flagstat') }.sort()
         if (bam_files.size() > 1) {
             """
-            picard MergeSamFiles \\
+            picard -Xmx${task.memory.toString().split(" ")[0]}g \\
+                   MergeSamFiles \\
                    VALIDATION_STRINGENCY=LENIENT \\
                    SORT_ORDER=coordinate \\
                    TMP_DIR=tmp \\
@@ -794,7 +797,8 @@ process merge_replicate_markdup {
         flagstat_files = orphan_bams.findAll { it.toString().endsWith('.flagstat') }.sort()
         if (bam_files.size() > 1) {
             """
-            picard MarkDuplicates \\
+            picard -Xmx${task.memory.toString().split(" ")[0]}g \\
+                   MarkDuplicates \\
                    VALIDATION_STRINGENCY=LENIENT \\
                    REMOVE_DUPLICATES=false \\
                    ASSUME_SORTED=true \\
@@ -1079,7 +1083,7 @@ process merge_replicate_macs2_homerqc {
 
    script:
        """
-       Rscript $baseDir/bin/homer_plot_annotation.R -i ${homers.join(',')} -s ${sampleids.join(',')} -o ./ -p ${name}
+       Rscript $baseDir/bin/plot_homer.R -i ${homers.join(',')} -s ${sampleids.join(',')} -o ./ -p ${name}
        """
 }
 
@@ -1107,7 +1111,7 @@ process merge_replicate_macs2_peakqc {
 
    script:
        """
-       Rscript $baseDir/bin/macs2_peakqc.R -i ${peaks.join(',')} -s ${sampleids.join(',')} -o ./ -p macs2_peakqc
+       Rscript $baseDir/bin/plot_macs2_peakqc.R -i ${peaks.join(',')} -s ${sampleids.join(',')} -o ./ -p macs2_peakqc
        """
 }
 
@@ -1125,16 +1129,35 @@ process merge_replicate_macs2_merge_peaks {
    set val(name), file("*.boolean.txt") into merge_replicate_macs2_merge_peaks_bool_ch
    set val(name), file("*.bed") into merge_replicate_macs2_merge_peaks_bed_ch
    set val(name), file("*.saf") into merge_replicate_macs2_merge_peaks_saf_ch
-   set val(name), file("*.log") into merge_replicate_macs2_merge_peaks_log_ch
+   set val(name), file("*.intersect.txt") into merge_replicate_macs2_merge_peaks_intersect_ch
 
    script:
        """
        sort -k1,1 -k2,2n ${peaks.join(' ')} \\
             | mergeBed -c 2,3,4,5,6,7,8,9 -o collapse,collapse,collapse,collapse,collapse,collapse,collapse,collapse > ${name}.txt
-       python $baseDir/bin/expand_merged_macs.py ${name}.txt ${sampleids.join(',')} ${name}.boolean.txt --min_samples 1
+       python $baseDir/bin/macs2_merged_expand.py ${name}.txt ${sampleids.join(',')} ${name}.boolean.txt --min_samples 1
        awk -v FS='\t' -v OFS='\t' 'FNR > 1 { print \$1, \$2, \$3, \$4, "0", "+" }' ${name}.boolean.txt > ${name}.bed
        echo -e "GeneID\tChr\tStart\tEnd\tStrand" > ${name}.saf
        awk -v FS='\t' -v OFS='\t' 'FNR > 1 { print \$4, \$1, \$2, \$3,  "+" }' ${name}.boolean.txt >> ${name}.saf
+       """
+}
+
+// PLOT PEAK INTERSECT USING UPSETR PACKAGE
+process merge_replicate_macs2_merge_peaks_intersect_plot {
+
+   tag "$name"
+
+   publishDir "${params.outdir}/align/mergeReplicate/macs2/merged_peaks", mode: 'copy'
+
+   input:
+   set val(name), file(intersect) from merge_replicate_macs2_merge_peaks_intersect_ch
+
+   output:
+   set val(name), file("*.pdf") into merge_replicate_macs2_merge_peaks_intersect_plot_ch
+
+   script:
+       """
+       Rscript $baseDir/bin/plot_peak_intersect.R -i ${intersect} -o ${name}.boolean.intersect.plot.pdf
        """
 }
 
@@ -1275,13 +1298,14 @@ process merge_sample {
         flagstat_files = bams.findAll { it.toString().endsWith('.flagstat') }.sort()
         if (bam_files.size() > 1) {
             """
-            picard MergeSamFiles \\
-                 VALIDATION_STRINGENCY=LENIENT \\
-                 SORT_ORDER=coordinate \\
-                 TMP_DIR=tmp \\
-                 ${'INPUT='+bam_files.join(' INPUT=')} \\
-                 OUTPUT=${out_prefix}.sorted.bam \\
-                 >> ${out_prefix}.MergeSamFiles.sysout 2>&1
+            picard -Xmx${task.memory.toString().split(" ")[0]}g \\
+                   MergeSamFiles \\
+                   VALIDATION_STRINGENCY=LENIENT \\
+                   SORT_ORDER=coordinate \\
+                   TMP_DIR=tmp \\
+                   ${'INPUT='+bam_files.join(' INPUT=')} \\
+                   OUTPUT=${out_prefix}.sorted.bam \\
+                   >> ${out_prefix}.MergeSamFiles.sysout 2>&1
             samtools index ${out_prefix}.sorted.bam
             samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
             """
@@ -1324,7 +1348,8 @@ process merge_sample_markdup {
         flagstat_files = orphan_bams.findAll { it.toString().endsWith('.flagstat') }.sort()
         if (bam_files.size() > 1) {
             """
-            picard MarkDuplicates \\
+            picard -Xmx${task.memory.toString().split(" ")[0]}g \\
+                   MarkDuplicates \\
                    VALIDATION_STRINGENCY=LENIENT \\
                    REMOVE_DUPLICATES=false \\
                    ASSUME_SORTED=true \\
@@ -1586,7 +1611,7 @@ process merge_sample_macs2_homerqc {
 
    script:
        """
-       Rscript $baseDir/bin/homer_plot_annotation.R -i ${homers.join(',')} -s ${sampleids.join(',')} -o ./ -p ${name}
+       Rscript $baseDir/bin/plot_homer.R -i ${homers.join(',')} -s ${sampleids.join(',')} -o ./ -p ${name}
        """
 }
 
@@ -1614,7 +1639,7 @@ process merge_sample_macs2_peakqc {
 
    script:
        """
-       Rscript $baseDir/bin/macs2_peakqc.R -i ${peaks.join(',')} -s ${sampleids.join(',')} -o ./ -p macs2_peakqc
+       Rscript $baseDir/bin/plot_macs2_peakqc.R -i ${peaks.join(',')} -s ${sampleids.join(',')} -o ./ -p macs2_peakqc
        """
 }
 
@@ -1632,16 +1657,35 @@ process merge_sample_macs2_merge_peaks {
    set val(name), file("*.boolean.txt") into merge_sample_macs2_merge_peaks_bool_ch
    set val(name), file("*.bed") into merge_sample_macs2_merge_peaks_bed_ch
    set val(name), file("*.saf") into merge_sample_macs2_merge_peaks_saf_ch
-   set val(name), file("*.log") into merge_sample_macs2_merge_peaks_log_ch
+   set val(name), file("*.intersect.txt") into merge_sample_macs2_merge_peaks_intersect_ch
 
    script:
        """
        sort -k1,1 -k2,2n ${peaks.join(' ')} \\
             | mergeBed -c 2,3,4,5,6,7,8,9 -o collapse,collapse,collapse,collapse,collapse,collapse,collapse,collapse > ${name}.txt
-       python $baseDir/bin/expand_merged_macs.py ${name}.txt ${sampleids.join(',')} ${name}.boolean.txt --min_samples 1
+       python $baseDir/bin/macs2_merged_expand.py ${name}.txt ${sampleids.join(',')} ${name}.boolean.txt --min_samples 1
        awk -v FS='\t' -v OFS='\t' 'FNR > 1 { print \$1, \$2, \$3, \$4, "0", "+" }' ${name}.boolean.txt > ${name}.bed
        echo -e "GeneID\tChr\tStart\tEnd\tStrand" > ${name}.saf
        awk -v FS='\t' -v OFS='\t' 'FNR > 1 { print \$4, \$1, \$2, \$3,  "+" }' ${name}.boolean.txt >> ${name}.saf
+       """
+}
+
+// PLOT PEAK INTERSECT USING UPSETR PACKAGE
+process merge_sample_macs2_merge_peaks_intersect_plot {
+
+   tag "$name"
+
+   publishDir "${params.outdir}/align/mergeSample/macs2/merged_peaks", mode: 'copy'
+
+   input:
+   set val(name), file(intersect) from merge_sample_macs2_merge_peaks_intersect_ch
+
+   output:
+   set val(name), file("*.pdf") into merge_sample_macs2_merge_peaks_intersect_plot_ch
+
+   script:
+       """
+       Rscript $baseDir/bin/plot_peak_intersect.R -i ${intersect} -o ${name}.boolean.intersect.plot.pdf
        """
 }
 
@@ -1778,8 +1822,8 @@ process igv_session {
         """
         [ ! -f ${params.outdir_abspath}/genome/${fasta.getName()} ] && ln -s ${params.fasta} ${params.outdir_abspath}/genome/${fasta.getName()}
         [ ! -f ${params.outdir_abspath}/genome/${gtf.getName()} ] && ln -s ${params.gtf} ${params.outdir_abspath}/genome/${gtf.getName()}
-        python $baseDir/bin/get_files_for_igv.py ${params.outdir_abspath} igv_files.txt
-        python $baseDir/bin/files_to_igv_session.py igv_session.xml igv_files.txt ${params.outdir_abspath}/genome/${fasta.getName()}
+        python $baseDir/bin/igv_get_files.py ${params.outdir_abspath} igv_files.txt
+        python $baseDir/bin/igv_files_to_session.py igv_session.xml igv_files.txt ${params.outdir_abspath}/genome/${fasta.getName()}
         """
 }
 

@@ -18,7 +18,7 @@ import funcs
 ############################################
 
 Description = 'Add sample boolean files and aggregate columns from merged MACS narrow or broad peak file.'
-Epilog = """Example usage: python expand_merged_macs.py <MERGED_INTERVAL_FILE> <SAMPLE_NAME_LIST> <OUTFILE> --is_narrow_peak --min_samples 0"""
+Epilog = """Example usage: python macs2_merged_expand.py <MERGED_INTERVAL_FILE> <SAMPLE_NAME_LIST> <OUTFILE> --is_narrow_peak --min_samples 0"""
 
 argParser = argparse.ArgumentParser(description=Description, epilog=Epilog)
 
@@ -44,7 +44,7 @@ args = argParser.parse_args()
 ## 2) narrowPeak
 ## sort -k1,1 -k2,2n <MACS_NARROWPEAK_FILE_LIST> | mergeBed -c 2,3,4,5,6,7,8,9,10 -o collapse,collapse,collapse,collapse,collapse,collapse,collapse,collapse,collapse > merged_peaks.txt
 
-def expand_merged_macs(MergedIntervalTxtFile,SampleNameList,OutFile,isNarrow=False,minSamples=0):
+def macs2_merged_expand(MergedIntervalTxtFile,SampleNameList,OutFile,isNarrow=False,minSamples=0):
 
     funcs.makedir(os.path.dirname(OutFile))
 
@@ -122,17 +122,13 @@ def expand_merged_macs(MergedIntervalTxtFile,SampleNameList,OutFile,isNarrow=Fal
             fout.close()
             break
 
-    fout = open(OutFile[:-4]+'.sampleCounts.log','w')
-    for k,v in sorted(sampleFreqDict.items(),reverse=True):
-        fout.write('%s\t%s\n' % (k,v))
-    fout.write('\n\n')
+    ## WRITE FILE FOR INTERVAL INTERSECT ACROSS SAMPLES.
+    ## COMPATIBLE WITH UPSETR PACKAGE.
+    fout = open(OutFile[:-4]+'.intersect.txt','w')
     combFreqItems = sorted([(combFreqDict[x],x) for x in combFreqDict.keys()],reverse=True)
     for k,v in combFreqItems:
-        fout.write('%s\t%s\n' % (k,','.join(v)))
+        fout.write('%s\t%s\n' % ('&'.join(v),k))
     fout.close()
-
-    print 'Total input intervals = ' + str(totalInIntervals)
-    print 'Total output intervals = ' + str(totalOutIntervals)
 
 ############################################
 ############################################
@@ -140,7 +136,7 @@ def expand_merged_macs(MergedIntervalTxtFile,SampleNameList,OutFile,isNarrow=Fal
 ############################################
 ############################################
 
-expand_merged_macs(MergedIntervalTxtFile=args.MERGED_INTERVAL_FILE,SampleNameList=args.SAMPLE_NAME_LIST.split(','),OutFile=args.OUTFILE,isNarrow=args.IS_NARROW_PEAK,minSamples=args.MIN_SAMPLES)
+macs2_merged_expand(MergedIntervalTxtFile=args.MERGED_INTERVAL_FILE,SampleNameList=args.SAMPLE_NAME_LIST.split(','),OutFile=args.OUTFILE,isNarrow=args.IS_NARROW_PEAK,minSamples=args.MIN_SAMPLES)
 
 ############################################
 ############################################

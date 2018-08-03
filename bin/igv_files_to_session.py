@@ -18,7 +18,7 @@ import funcs
 ############################################
 
 Description = 'Create IGV session file from a list of files and associated colours - ".bed", ".bw", ".bigwig", ".tdf", ".gtf" files currently supported.'
-Epilog = """Example usage: python files_to_igv_session.py <XML_OUT> <LIST_FILE> <GENOME>"""
+Epilog = """Example usage: python igv_files_to_session.py <XML_OUT> <LIST_FILE> <GENOME>"""
 
 argParser = argparse.ArgumentParser(description=Description, epilog=Epilog)
 
@@ -34,7 +34,7 @@ args = argParser.parse_args()
 ############################################
 ############################################
 
-def files_to_igv_session(XMLOut,ListFile,Genome):
+def igv_files_to_session(XMLOut,ListFile,Genome):
 
     funcs.makedir(os.path.dirname(XMLOut))
 
@@ -95,7 +95,7 @@ def files_to_igv_session(XMLOut,ListFile,Genome):
 ############################################
 ############################################
 
-files_to_igv_session(XMLOut=args.XML_OUT,ListFile=args.LIST_FILE,Genome=args.GENOME)
+igv_files_to_session(XMLOut=args.XML_OUT,ListFile=args.LIST_FILE,Genome=args.GENOME)
 
 ############################################
 ############################################

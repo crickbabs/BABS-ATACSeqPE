@@ -19,7 +19,7 @@ import funcs
 ############################################
 
 Description = 'Remove singleton reads from paired-end BAM file i.e if read1 is present in BAM file without read 2 and vice versa.'
-Epilog = """Example usage: rm_orphan_from_bampe.py <BAM_INPUT_FILE> <BAM_OUTPUT_FILE>"""
+Epilog = """Example usage: bampe_rm_orphan.py <BAM_INPUT_FILE> <BAM_OUTPUT_FILE>"""
 
 argParser = argparse.ArgumentParser(description=Description, epilog=Epilog)
 
@@ -36,7 +36,7 @@ args = argParser.parse_args()
 ############################################
 ############################################
 
-def rm_orphan_from_bampe(BAMIn,BAMOut,ExclDiffChrom=False):
+def bampe_rm_orphan(BAMIn,BAMOut,ExclDiffChrom=False):
 
     ## SETUP DIRECTORY/FILE STRUCTURE
     OutDir = os.path.dirname(BAMOut)
@@ -110,7 +110,7 @@ def rm_orphan_from_bampe(BAMIn,BAMOut,ExclDiffChrom=False):
 ############################################
 ############################################
 
-rm_orphan_from_bampe(BAMIn=args.BAM_INPUT_FILE,BAMOut=args.BAM_OUTPUT_FILE,ExclDiffChrom=args.EXCL_DIFF_CHROM)
+bampe_rm_orphan(BAMIn=args.BAM_INPUT_FILE,BAMOut=args.BAM_OUTPUT_FILE,ExclDiffChrom=args.EXCL_DIFF_CHROM)
 
 ############################################
 ############################################
