@@ -257,13 +257,21 @@ process prep_genome {
     file "*.rmMito.bed" into prep_genome_bed_filter_bam_ch
 
     script:
-        prefix = fasta.toString().take(fasta.toString().lastIndexOf('.'))
-        """
-        samtools faidx ${fasta}
-        cut -f 1,2 ${fasta}.fai > ${fasta}.sizes
-        awk 'BEGIN{OFS="\t"}{print \$1, '0' , \$2}' ${fasta}.sizes > ${fasta}.bed
-        awk '\$1 != "${params.mito_name}"' ${fasta}.bed > ${fasta}.rmMito.bed
-        """
+        if (file(params.genome_mask).exists())) {
+            """
+            samtools faidx ${fasta}
+            cut -f 1,2 ${fasta}.fai > ${fasta}.sizes
+            complementBed -i ${params.genome_mask} -g ${fasta}.sizes > ${fasta}.bed
+            awk '\$1 != "${params.mito_name}"' ${fasta}.bed > ${fasta}.rmMito.bed
+            """
+        } else {
+          """
+          samtools faidx ${fasta}
+          cut -f 1,2 ${fasta}.fai > ${fasta}.sizes
+          awk 'BEGIN{OFS="\t"}{print \$1, '0' , \$2}' ${fasta}.sizes > ${fasta}.bed
+          awk '\$1 != "${params.mito_name}"' ${fasta}.bed > ${fasta}.rmMito.bed
+          """
+        }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
