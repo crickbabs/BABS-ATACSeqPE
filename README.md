@@ -9,7 +9,7 @@ The pipeline was written by [The Bioinformatics & Biostatistics Group](https://w
 
 ## Pipeline summary
 
-1. Raw read QC ([FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/),[Fastq Screen](https://www.bioinformatics.babraham.ac.uk/projects/fastq_screen/))
+1. Raw read QC ([FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/), [Fastq Screen](https://www.bioinformatics.babraham.ac.uk/projects/fastq_screen/))
 2. Adapter trimming ([cutadapt](http://cutadapt.readthedocs.io/en/stable/installation.html))
 3. Alignment ([BWA](https://sourceforge.net/projects/bio-bwa/files/))
 4. Mark duplicates ([picard](https://broadinstitute.github.io/picard/))
@@ -32,9 +32,9 @@ The pipeline was written by [The Bioinformatics & Biostatistics Group](https://w
     * Annotate peaks relative to gene features ([HOMER](http://homer.ucsd.edu/homer/download.html))
     * Merge peaks across all samples and create tabular file to aid in the filtering of the data ([BEDTools](https://github.com/arq5x/bedtools2/))
     * Count reads in merged peaks at replicate level ([featureCounts](http://bioinf.wehi.edu.au/featureCounts/))
-    * Differential binding analysis, PCA and clustering ([R](https://www.r-project.org/),[DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html))
+    * Differential binding analysis, PCA and clustering ([R](https://www.r-project.org/), [DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html))
 7. Create IGV session file containing bigWig tracks, peaks and differential sites for data visualisation ([IGV](https://software.broadinstitute.org/software/igv/)).
-8. Collect and present QC at the raw read, alignment and peak-level ([MultiQC](http://multiqc.info/),[R](https://www.r-project.org/))
+8. Collect and present QC at the raw read, alignment and peak-level ([MultiQC](http://multiqc.info/), [R](https://www.r-project.org/))
 
 ## Documentation
 
