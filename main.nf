@@ -257,7 +257,7 @@ process prep_genome {
     file "*.rmMito.bed" into prep_genome_bed_filter_bam_ch
 
     script:
-        if (file(params.genome_mask).exists())) {
+        if (file(params.genome_mask).exists()) {
             """
             samtools faidx ${fasta}
             cut -f 1,2 ${fasta}.fai > ${fasta}.sizes
