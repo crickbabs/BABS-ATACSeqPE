@@ -938,6 +938,8 @@ process merge_replicate_bigwig {
 
     tag "$sampleid"
 
+    label 'bigwig'
+
     publishDir "${params.outdir}/align/mergeReplicate/bigwig", mode: 'copy'
 
     input:
@@ -1467,6 +1469,8 @@ process merge_sample_bigwig {
 
     tag "$sampleid"
 
+    label 'bigwig'
+
     publishDir "${params.outdir}/align/mergeSample/bigwig", mode: 'copy'
 
     input:
@@ -1879,9 +1883,9 @@ process multiqc {
 ///////////////////////////////////////////////////////////////////////////////
 
 // RUN THIS AFTER MULTIQC BECAUSE ITS AT THE END OF THE PIPELINE
-process pipeline_qc_to_tsv {
+process qc_to_tsv {
 
-    tag "pipeline_qc_to_tsv"
+    tag "qc_to_tsv"
 
     publishDir "${params.outdir}/qc", mode: 'copy'
 
@@ -1889,7 +1893,7 @@ process pipeline_qc_to_tsv {
     file multiqcs from multiqc_ch
 
     output:
-    file ".tsv" into pipeline_qc_to_tsv_ch
+    file "*.tsv" into pipeline_qc_to_tsv_ch
 
     script:
         """
