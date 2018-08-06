@@ -1873,6 +1873,33 @@ process multiqc {
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 /* --                                                                     -- */
+/* --                          QC LOG FILE                                -- */
+/* --                                                                     -- */
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+// RUN THIS AFTER MULTIQC BECAUSE ITS AT THE END OF THE PIPELINE
+process pipeline_qc_to_tsv {
+
+    tag "pipeline_qc_to_tsv"
+
+    publishDir "${params.outdir}/qc", mode: 'copy'
+
+    input:
+    file multiqcs from multiqc_ch
+
+    output:
+    file ".tsv" into pipeline_qc_to_tsv_ch
+
+    script:
+        """
+        python $baseDir/bin/pipeline_qc_to_tsv.py ${params.outdir_abspath} ${params.mito_name} BABS-ATACSeqPE_pipeline_qc.tsv
+        """
+}
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/* --                                                                     -- */
 /* --                        END OF PIPELINE                              -- */
 /* --                                                                     -- */
 ///////////////////////////////////////////////////////////////////////////////
