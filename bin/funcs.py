@@ -57,15 +57,16 @@ def cutadaptPELogToDict(cutadaptLogFile):
     fields = ['Total read pairs processed:','','','']
     for line in fin.readlines():
         if line.find('Total read pairs processed:') != -1:
-            cutadaptDict['totalPairs'] = line.split(':')[1].strip().replace(',','')
+            cutadaptDict['totalReads'] = int(line.split(':')[1].strip().replace(',',''))*2
         elif line.find('Pairs written (passing filters):') != -1:
-            cutadaptDict['passTrimmedPairs'] = line.split(':')[1].strip().split()[0].replace(',','')
+            cutadaptDict['passTrimmedReads'] = int(line.split(':')[1].strip().split()[0].replace(',',''))*2
         elif line.find('Total written (filtered):') != -1:
             cutadaptDict['passTrimmedBases'] = line.split(':')[1].split()[-1][1:-1]
     fin.close()
 
     return cutadaptDict
 
+############################################
 
 def flagstatToDict(flagStatFile):
 

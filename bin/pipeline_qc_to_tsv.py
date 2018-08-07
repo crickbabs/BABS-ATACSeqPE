@@ -69,10 +69,10 @@ def pipeline_qc_to_tsv(ResultsDir,MitoName,OutFile):
                 qcDict[section][sample] = []
 
             if tool == 'cutadapt':
-                fields = ['totalPairs','passTrimmedPairs','passTrimmedBases']
+                fields = ['totalReads','passTrimmedReads','passTrimmedBases']
                 ofields = fields
                 cutadaptDict = funcs.cutadaptPELogToDict(fileList[idx])
-                qcDict[section][sample] += [cutadaptDict[x] for x in fields]
+                qcDict[section][sample] += [str(cutadaptDict[x]) for x in fields]
                 if idx == 0:
                     headerDict[section] += [header_prefix+' '+x for x in ofields]
 
