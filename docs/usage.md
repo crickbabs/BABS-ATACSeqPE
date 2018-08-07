@@ -12,3 +12,5 @@ You can also specify parameters at the command-line to override those provided i
 ```bash
 nextflow run main.nf --help
 ```
+
+A template script ([`run_pipeline.sh`](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/run_pipeline.sh)) summarising the steps to run the pipeline is also available to customise.
