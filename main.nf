@@ -1896,7 +1896,7 @@ process qc_to_tsv {
 
     script:
         """
-        python $baseDir/bin/pipeline_qc_to_tsv.py ${params.outdir_abspath} ${params.mito_name} BABS-ATACSeqPE_pipeline_qc.tsv
+        python $baseDir/bin/pipeline_qc_to_tsv.py ${params.outdir_abspath} BABS-ATACSeqPE_pipeline_qc.tsv ${params.mito_name}
         """
 }
 
