@@ -27,7 +27,8 @@ argParser = argparse.ArgumentParser(description=Description, epilog=Epilog)
 argParser.add_argument('BAM_INPUT_FILE', help="Input BAM file sorted by name.")
 argParser.add_argument('BAM_OUTPUT_FILE', help="Output BAM file sorted by name.")
 
-argParser.add_argument('-edc', '--excl_diff_chrom', dest="EXCL_DIFF_CHROM", help="Remove pairs that map to different chromosomes.",action='store_true')
+## OPTIONAL PARAMETERS
+argParser.add_argument('-op', '--only_prop_pair', dest="ONLY_PROPER_PAIR", help="Only keeps pairs that are in FR orientation on same chromosome.",action='store_true')
 args = argParser.parse_args()
 
 ############################################
@@ -36,38 +37,59 @@ args = argParser.parse_args()
 ############################################
 ############################################
 
-def bampe_rm_orphan(BAMIn,BAMOut,ExclDiffChrom=False):
+def bampe_rm_orphan(BAMIn,BAMOut,onlyPropPair=False):
 
     ## SETUP DIRECTORY/FILE STRUCTURE
     OutDir = os.path.dirname(BAMOut)
     funcs.makedir(OutDir)
 
     ## COUNT VARIABLES
-    TotalReads = 1; TotalOutputPairs = 0; TotalSingletons = 0; TotalDiffChromPairs = 0
+    totalReads = 0; totalOutputPairs = 0; totalSingletons = 0; totalImproperPairs = 0
 
-    ## ITERATE THROUGH SAM FILE
+    ## ITERATE THROUGH BAM FILE
     EOF = 0
     SAMFin = pysam.Samfile(BAMIn,"rb")
     SAMFout = pysam.Samfile(BAMOut, "wb",header=SAMFin.header)
     currRead = SAMFin.next()
     for read in SAMFin:
-        TotalReads += 1
+        totalReads += 1
         if currRead.qname == read.qname:
             pair1 = currRead; pair2 = read
-            if ExclDiffChrom:
+
+            ## FILTER FOR READS ON SAME CHROMOSOME IN FR ORIENTATION
+            if onlyPropPair:
                 if pair1.tid == pair2.tid:
-                    TotalOutputPairs += 1
-                    SAMFout.write(pair1)
-                    SAMFout.write(pair2)
+
+                    ## READ1 FORWARD AND READ2 REVERSE STRAND
+                    if not pair1.is_reverse and pair2.is_reverse:
+                        if pair1.reference_start <= pair2.reference_start:
+                            totalOutputPairs += 1
+                            SAMFout.write(pair1)
+                            SAMFout.write(pair2)
+                        else:
+                            totalImproperPairs += 1
+
+                    ## READ1 REVERSE AND READ2 FORWARD STRAND
+                    elif pair1.is_reverse and not pair2.is_reverse:
+                        if pair2.reference_start <= pair1.reference_start:
+                            totalOutputPairs += 1
+                            SAMFout.write(pair1)
+                            SAMFout.write(pair2)
+                        else:
+                            totalImproperPairs += 1
+
+                    else:
+                        totalImproperPairs += 1
                 else:
-                    TotalDiffChromPairs += 1
+                    totalImproperPairs += 1
             else:
-                TotalOutputPairs += 1
+                totalOutputPairs += 1
                 SAMFout.write(pair1)
                 SAMFout.write(pair2)
 
             ## RESET COUNTER
             try:
+                totalReads += 1
                 currRead = SAMFin.next()
             except:
                 StopIteration
@@ -75,19 +97,20 @@ def bampe_rm_orphan(BAMIn,BAMOut,ExclDiffChrom=False):
 
         ## READS WHERE ONLY ONE OF A PAIR IS IN FILE
         else:
-            TotalSingletons += 1
+            totalSingletons += 1
             pair1 = currRead
             currRead = read
 
     if not EOF:
-        TotalSingletons += 1
+        totalReads += 1
+        totalSingletons += 1
         pair1 = currRead
 
     ## CLOSE ALL FILE HANDLES
     SAMFin.close()
     SAMFout.close()
 
-    LogFile = os.path.join(OutDir,'%s_filterBAMPE_ExclSingletons.log' % (os.path.basename(BAMOut[:-4])))
+    LogFile = os.path.join(OutDir,'%s_bampe_rm_orphan.log' % (os.path.basename(BAMOut[:-4])))
     SamLogFile = open(LogFile,'w')
     SamLogFile.write('\n##############################\n')
     SamLogFile.write('FILES/DIRECTORIES')
@@ -97,10 +120,10 @@ def bampe_rm_orphan(BAMIn,BAMOut,ExclDiffChrom=False):
     SamLogFile.write('\n##############################\n')
     SamLogFile.write('OVERALL COUNTS')
     SamLogFile.write('\n##############################\n\n')
-    SamLogFile.write('Total Input Reads = ' + str(TotalReads) + '\n')
-    SamLogFile.write('Total Output Pairs = ' + str(TotalOutputPairs) + '\n')
-    SamLogFile.write('Total Singletons Excluded = ' + str(TotalSingletons) + '\n')
-    SamLogFile.write('Total Pairs Mapped To Different Chromosomes Excluded = ' + str(TotalDiffChromPairs) + '\n')
+    SamLogFile.write('Total Input Reads = ' + str(totalReads) + '\n')
+    SamLogFile.write('Total Output Pairs = ' + str(totalOutputPairs) + '\n')
+    SamLogFile.write('Total Singletons Excluded = ' + str(totalSingletons) + '\n')
+    SamLogFile.write('Total Improper Pairs Excluded = ' + str(totalImproperPairs) + '\n')
     SamLogFile.write('\n##############################\n')
     SamLogFile.close()
 
@@ -110,7 +133,7 @@ def bampe_rm_orphan(BAMIn,BAMOut,ExclDiffChrom=False):
 ############################################
 ############################################
 
-bampe_rm_orphan(BAMIn=args.BAM_INPUT_FILE,BAMOut=args.BAM_OUTPUT_FILE,ExclDiffChrom=args.EXCL_DIFF_CHROM)
+bampe_rm_orphan(BAMIn=args.BAM_INPUT_FILE,BAMOut=args.BAM_OUTPUT_FILE,onlyPropPair=args.ONLY_PROPER_PAIR)
 
 ############################################
 ############################################
