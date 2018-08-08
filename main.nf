@@ -615,8 +615,8 @@ process markdup_collectmetrics {
         """
 }
 
-// FILTER BAM FILE TO KEEP (1) UNIQUELY MAPPED, (2) PRIMARY ALIGNMENT, (3) PROPERLY-PAIRED, (4) NON-MITOCHONDRIAL
-//                         (5) NON-SOFTCLIPPED (bamtools), (6) INSERT SIZE < 2KB (bamtools), (7) MISMATCH <= 3 (bamtools)
+// FILTER BAM FILE TO KEEP (1) UNIQUELY MAPPED, (2) PRIMARY ALIGNMENT, (3) NON-DUPLICATES, (4) NON-MITOCHONDRIAL (5) IN FR ORIENTATION ON SAME CHROMOSOME
+//                         (6) NON-SOFTCLIPPED (bamtools), (7) INSERT SIZE < 2KB (bamtools), (8) MISMATCH <= 3 (bamtools)
 process filter_bam {
 
     tag "$sampleid"
@@ -634,7 +634,6 @@ process filter_bam {
 
     script:
         // 0x0001 = read paired
-        // 0x0002 = read mapped in proper pair
         // 0x0004 = read unmapped
         // 0x0008 = mate unmapped
         // 0x0100 = not primary alignment
@@ -643,10 +642,10 @@ process filter_bam {
         """
         samtools view \\
                  -f 0x001 \\
-                 -f 0x002 \\
                  -F 0x004 \\
                  -F 0x0008 \\
                  -F 0x0100 \\
+                 -F 0x0400 \\
                  -q 1 \\
                  -L ${mito_bed} \\
                  -b ${bam[0]} \\
@@ -673,7 +672,7 @@ process rm_orphan {
     script:
         out_prefix="${sampleid}.mkD.flT"
         """
-        python $baseDir/bin/bampe_rm_orphan.py ${bam} ${out_prefix}.bam --excl_diff_chrom
+        python $baseDir/bin/bampe_rm_orphan.py ${bam} ${out_prefix}.bam --only_prop_pair
         """
 }
 
