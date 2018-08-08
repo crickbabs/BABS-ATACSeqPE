@@ -69,7 +69,7 @@ def pipeline_qc_to_tsv(ResultsDir,MitoName,OutFile):
                 qcDict[section][sample] = []
 
             if tool == 'cutadapt':
-                fields = ['totalReads','passTrimmedReads','passTrimmedBases']
+                fields = ['totalPairs','passTrimmedPairs','passTrimmedBases']
                 ofields = fields
                 cutadaptDict = funcs.cutadaptPELogToDict(fileList[idx])
                 qcDict[section][sample] += [str(cutadaptDict[x]) for x in fields]
@@ -77,10 +77,14 @@ def pipeline_qc_to_tsv(ResultsDir,MitoName,OutFile):
                     headerDict[section] += [header_prefix+' '+x for x in ofields]
 
             elif tool == 'flagstat':
-                fields = ['mapped','properly paired','duplicates','read1','read2']
-                ofields = ['mapped','properlyPaired','duplicates','read1','read2']
+                fields = ['in total','mapped','properly paired','duplicates','read1','read2']
+                ofields = ['total','mapped','properlyPaired','duplicates','read1','read2']
                 flagstatDict = funcs.flagstatToDict(fileList[idx])
-                qcDict[section][sample] += [str(flagstatDict[x][0]) for x in fields]
+                for field in fields:
+                    if field in ['in total']:
+                        qcDict[section][sample] += ['%s' % (flagstatDict[field][0]/2)]
+                    else:
+                        qcDict[section][sample] += ['%s' % (funcs.percentToStr(flagstatDict[field][0],flagstatDict['in total'][0],sigFigs=2,parentheses=False))]
                 if idx == 0:
                     headerDict[section] += [header_prefix+' '+x for x in ofields]
 
@@ -88,7 +92,9 @@ def pipeline_qc_to_tsv(ResultsDir,MitoName,OutFile):
                 fields = [MitoName]
                 ofields = fields
                 idxstatsDict = funcs.idxstatsToDict(fileList[idx])
-                qcDict[section][sample] += [str(idxstatsDict[x][1]) for x in fields]
+                sumCount = sum([x[1] for x in idxstatsDict.values()])
+                for field in fields:
+                    qcDict[section][sample] += ['%s' % (funcs.percentToStr(idxstatsDict[field][1],sumCount,sigFigs=2,parentheses=False))]
                 if idx == 0:
                     headerDict[section] += [header_prefix+' '+x for x in ofields]
 

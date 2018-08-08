@@ -45,6 +45,29 @@ def numLinesInFile(File):
     return int(result.strip().split()[0])
 
 ############################################
+
+def intersect(a,b):
+
+    return filter(lambda x:x in a,b)
+
+############################################
+
+def percentToStr(numer,denom,sigFigs=2,parentheses=False):
+
+    percStr = ''
+    sigFigStr = '%.' + str(sigFigs) + 'f'
+    if numer == 0 or denom == 0:
+        percStr = sigFigStr % (0.0) + '%'
+    elif numer == 0 and denom == 0:
+        percStr = sigFigStr % (0.0) + '%'
+    else:
+        percStr = sigFigStr %((numer/float(denom))*100) + '%'
+    if parentheses != False:
+        return '(' + percStr + ')'
+    else:
+        return percStr
+
+############################################
 ############################################
 ## SOFTWARE FUNCTIONS
 ############################################
@@ -57,9 +80,9 @@ def cutadaptPELogToDict(cutadaptLogFile):
     fields = ['Total read pairs processed:','','','']
     for line in fin.readlines():
         if line.find('Total read pairs processed:') != -1:
-            cutadaptDict['totalReads'] = int(line.split(':')[1].strip().replace(',',''))*2
+            cutadaptDict['totalPairs'] = int(line.split(':')[1].strip().replace(',',''))
         elif line.find('Pairs written (passing filters):') != -1:
-            cutadaptDict['passTrimmedReads'] = int(line.split(':')[1].strip().split()[0].replace(',',''))*2
+            cutadaptDict['passTrimmedPairs'] = int(line.split(':')[1].strip().split()[0].replace(',',''))
         elif line.find('Total written (filtered):') != -1:
             cutadaptDict['passTrimmedBases'] = line.split(':')[1].split()[-1][1:-1]
     fin.close()
