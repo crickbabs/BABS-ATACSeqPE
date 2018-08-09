@@ -78,7 +78,7 @@ def pipeline_qc_to_tsv(ResultsDir,MitoName,OutFile):
 
             elif tool == 'flagstat':
                 fields = ['in total','mapped','properly paired','duplicates','read1','read2']
-                ofields = ['total','mapped','properlyPaired','duplicates','read1','read2']
+                ofields = ['totalPairs','mapped','properlyPaired','duplicates','read1','read2']
                 flagstatDict = funcs.flagstatToDict(fileList[idx])
                 for field in fields:
                     if field in ['in total']:
