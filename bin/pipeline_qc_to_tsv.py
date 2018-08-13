@@ -128,11 +128,12 @@ def pipeline_qc_to_tsv(ResultsDir,MitoName,OutFile):
     sectionOrder = ['RUN-LEVEL', 'REPLICATE-LEVEL', 'SAMPLE-LEVEL']
     fout = open(OutFile,'w')
     for section in sectionOrder:
-        fout.write('## %s\n' % (section))
-        fout.write('\t'.join(['sample'] + headerDict[section]) + '\n')
-        for sample in sorted(qcDict[section].keys()):
-            fout.write('\t'.join([sample] + qcDict[section][sample]) + '\n')
-        fout.write('\n')
+        if len(qcDict[section]) != 0:
+            fout.write('## %s\n' % (section))
+            fout.write('\t'.join(['sample'] + headerDict[section]) + '\n')
+            for sample in sorted(qcDict[section].keys()):
+                fout.write('\t'.join([sample] + qcDict[section][sample]) + '\n')
+            fout.write('\n')
     fout.close()
 
 ############################################

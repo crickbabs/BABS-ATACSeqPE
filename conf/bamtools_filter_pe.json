@@ -1,6 +1,10 @@
 {
     "filters" : [
-        { "id" : "insert",
+        { "id" : "insert_min",
+          "insertSize" : ">=-2000"
+        },
+
+        { "id" : "insert_max",
           "insertSize" : "<=2000"
         },
 
@@ -13,6 +17,6 @@
         }
     ],
 
-    "rule" : " insert & mismatch & !cigar "
+    "rule" : " insert_min & insert_max & mismatch & !cigar "
 
 }
