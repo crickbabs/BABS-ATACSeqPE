@@ -254,7 +254,7 @@ replicates_exist = design_replicate_exist_ch.map { it -> [ it[2].toInteger() ] }
 
 // CREATE FAIDX FOR REFERENCE GENOME
 // CREATE CHROMOSOME SIZES FILE FOR BEDTOOLS
-// CREATE BED FILE WITHOUT MITOCHONDRIAL CONTIG FOR SAMTOOLS FILTERING
+// CREATE BED FILE WITHOUT MASKED REGIONS & MITOCHONDRIAL CONTIG FOR SAMTOOLS FILTERING
 process prep_genome {
 
     tag "$fasta"
@@ -270,7 +270,7 @@ process prep_genome {
                         prep_genome_sizes_sample_bedgraph_ch,
                         prep_genome_sizes_replicate_bigwig_ch,
                         prep_genome_sizes_sample_bigwig_ch
-    file "*.rmMito.bed" into prep_genome_bed_filter_bam_ch
+    file "*.include_regions.bed" into prep_genome_bed_filter_bam_ch
 
     script:
         if (file(params.genome_mask).exists()) {
@@ -278,14 +278,14 @@ process prep_genome {
             samtools faidx ${fasta}
             cut -f 1,2 ${fasta}.fai > ${fasta}.sizes
             complementBed -i ${params.genome_mask} -g ${fasta}.sizes > ${fasta}.bed
-            awk '\$1 != "${params.mito_name}"' ${fasta}.bed > ${fasta}.rmMito.bed
+            awk '\$1 != "${params.mito_name}"' ${fasta}.bed > ${fasta}.include_regions.bed
             """
         } else {
           """
           samtools faidx ${fasta}
           cut -f 1,2 ${fasta}.fai > ${fasta}.sizes
           awk 'BEGIN{OFS="\t"}{print \$1, '0' , \$2}' ${fasta}.sizes > ${fasta}.bed
-          awk '\$1 != "${params.mito_name}"' ${fasta}.bed > ${fasta}.rmMito.bed
+          awk '\$1 != "${params.mito_name}"' ${fasta}.bed > ${fasta}.include_regions.bed
           """
         }
 }
@@ -641,10 +641,10 @@ process filter_bam {
 
     input:
     set val(sampleid), file(bam) from markdup_filter_bam_ch
-    file mito_bed from prep_genome_bed_filter_bam_ch.collect()
+    file include_bed from prep_genome_bed_filter_bam_ch.collect()
 
     output:
-    set val(sampleid), file("*.mkD.clN.bam") into filter_bam_ch
+    set val(sampleid), file("*.flT.bam") into filter_bam_ch
     set val(sampleid), file("*.sorted.{bam,bam.bai}") into filter_bam_sort_ch
     set val(sampleid), file("*.flagstat") into filter_bam_flagstat_ch
 
@@ -654,7 +654,7 @@ process filter_bam {
         // 0x0008 = mate unmapped
         // 0x0100 = not primary alignment
         // 0x0400 = read is PCR or optical duplicate
-        out_prefix="${sampleid}.mkD.clN"
+        out_prefix="${sampleid}.flT"
         """
         samtools view \\
                  -f 0x001 \\
@@ -663,7 +663,7 @@ process filter_bam {
                  -F 0x0100 \\
                  -F 0x0400 \\
                  -q 1 \\
-                 -L ${mito_bed} \\
+                 -L ${include_bed} \\
                  -b ${bam[0]} \\
                  | bamtools filter \\
                             -out ${out_prefix}.sorted.bam \\
@@ -686,7 +686,7 @@ process rm_orphan {
     set val(sampleid), file("*.bam") into rm_orphan_ch
 
     script:
-        out_prefix="${sampleid}.mkD.flT"
+        out_prefix="${sampleid}.clN"
         """
         python $baseDir/bin/bampe_rm_orphan.py ${bam} ${out_prefix}.bam --only_prop_pair
         """
@@ -718,7 +718,7 @@ process rm_orphan_sort_bam {
     set val(sampleid), file("*.idxstats") into rm_orphan_sort_bam_idxstats_ch
 
     script:
-        out_prefix="${sampleid}.mkD.flT"
+        out_prefix="${sampleid}.clN"
         """
         samtools sort -@ ${task.cpus} -o ${out_prefix}.sorted.bam -T ${out_prefix} ${out_prefix}.bam
         samtools index ${out_prefix}.sorted.bam
@@ -750,7 +750,7 @@ process merge_replicate {
 
     label 'lowcpu'
 
-    publishDir "${params.outdir}/align/mergeReplicate", mode: 'copy',
+    publishDir "${params.outdir}/align/replicateLevel", mode: 'copy',
                 saveAs: {filename ->
                             if (filename.endsWith(".sysout")) "sysout/$filename"
                             else null
@@ -765,7 +765,7 @@ process merge_replicate {
     set val(sampleid), file("*.sysout") into merge_replicate_sysout_ch
 
     script:
-        out_prefix="${sampleid}.mRp"
+        out_prefix="${sampleid}.RpL"
         bam_files = bams.findAll { it.toString().endsWith('.bam') }.sort()
         flagstat_files = bams.findAll { it.toString().endsWith('.flagstat') }.sort()
         if (bam_files.size() > 1) {
@@ -798,7 +798,7 @@ process merge_replicate_markdup {
 
     label 'lowcpu'
 
-    publishDir "${params.outdir}/align/mergeReplicate", mode: 'copy',
+    publishDir "${params.outdir}/align/replicateLevel", mode: 'copy',
                 saveAs: {filename ->
                             if (filename.endsWith(".sysout")) "sysout/$filename"
                             else if (filename.endsWith(".metrics.txt")) "picard_metrics/$filename"
@@ -815,7 +815,7 @@ process merge_replicate_markdup {
     set val(sampleid), file("*.sysout") into merge_replicate_markdup_sysout_ch
 
     script:
-        out_prefix="${sampleid}.mRp.mkD"
+        out_prefix="${sampleid}.RpL.mkD"
         bam_files = orphan_bams.findAll { it.toString().endsWith('.bam') }.sort()
         flagstat_files = orphan_bams.findAll { it.toString().endsWith('.flagstat') }.sort()
         if (bam_files.size() > 1) {
@@ -849,7 +849,7 @@ process merge_replicate_rmdup {
 
     tag "$sampleid"
 
-    publishDir "${params.outdir}/align/mergeReplicate", mode: 'copy',
+    publishDir "${params.outdir}/align/replicateLevel", mode: 'copy',
                 saveAs: {filename ->
                             if (filename.endsWith(".flagstat")) "flagstat/$filename"
                             else if (filename.endsWith(".bam")) "$filename"
@@ -869,7 +869,7 @@ process merge_replicate_rmdup {
                                                merge_replicate_rmdup_flagstat_macs2_frip_ch
 
     script:
-        out_prefix="${sampleid}.mRp.rmD"
+        out_prefix="${sampleid}.RpL.rmD"
         bam_files = orphan_bams.findAll { it.toString().endsWith('.bam') }.sort()
         if (bam_files.size() > 1) {
             """
@@ -901,7 +901,7 @@ process merge_replicate_name_bam {
                                          merge_replicate_name_bam_merge_sample_featurecounts_ch
 
     script:
-        out_prefix="${sampleid}.mRp.rmD"
+        out_prefix="${sampleid}.RpL.rmD"
         """
         samtools sort -n -@ ${task.cpus} -o ${out_prefix}.bam -T ${out_prefix} ${out_prefix}.sorted.bam
         """
@@ -925,7 +925,7 @@ process merge_replicate_bedgraph {
 
     tag "$sampleid"
 
-    publishDir "${params.outdir}/align/mergeReplicate/bigwig", mode: 'copy',
+    publishDir "${params.outdir}/align/replicateLevel/bigwig", mode: 'copy',
                 saveAs: {filename ->
                             if (filename.endsWith(".txt")) "scale_factor/$filename"
                             else null
@@ -940,7 +940,7 @@ process merge_replicate_bedgraph {
     set val(sampleid), file("*.txt") into merge_replicate_bedgraph_scale_ch
 
     script:
-        out_prefix="${sampleid}.mRp.rmD"
+        out_prefix="${sampleid}.RpL.rmD"
         """
         SCALE_FACTOR=\$(grep 'read1' ${flagstat} | awk '{print 1000000/\$1}')
         echo \$SCALE_FACTOR > ${out_prefix}.scale_factor.txt
@@ -955,7 +955,7 @@ process merge_replicate_bigwig {
 
     label 'bigwig'
 
-    publishDir "${params.outdir}/align/mergeReplicate/bigwig", mode: 'copy'
+    publishDir "${params.outdir}/align/replicateLevel/bigwig", mode: 'copy'
 
     input:
     set val(sampleid), file(bedgraph) from merge_replicate_bedgraph_ch
@@ -965,7 +965,7 @@ process merge_replicate_bigwig {
     set val(sampleid), file("*.bigWig") into merge_replicate_bigwig_ch
 
     script:
-        out_prefix="${sampleid}.mRp.rmD"
+        out_prefix="${sampleid}.RpL.rmD"
         """
         wigToBigWig -clip ${bedgraph}  ${chrom_sizes} ${out_prefix}.bigWig
         """
@@ -980,7 +980,7 @@ process merge_replicate_macs2 {
 
     tag "$sampleid"
 
-    publishDir "${params.outdir}/align/mergeReplicate/macs2", mode: 'copy'
+    publishDir "${params.outdir}/align/replicateLevel/macs2", mode: 'copy'
 
     input:
     set val(sampleid), file(bam) from merge_replicate_rmdup_macs2_ch
@@ -990,11 +990,11 @@ process merge_replicate_macs2 {
                                                   merge_replicate_macs2_frip_in_ch,
                                                   merge_replicate_macs2_merge_peaks_in_ch
     set val(sampleid), file("*/*.{gappedPeak,xls}") into merge_replicate_macs2_output_ch
-    set val(sampleid), file("*/*.sysout") into merge_replicate_macs2_sysout_ch
+    set val(sampleid), file("*/*/*.sysout") into merge_replicate_macs2_sysout_ch
 
     script:
         """
-        mkdir -p ${sampleid}
+        mkdir -p ${sampleid}/sysout/
         macs2 callpeak \\
               --verbose=2 \\
               -t ${bam[0]} \\
@@ -1005,7 +1005,7 @@ process merge_replicate_macs2 {
               --keep-dup all \\
               --nomodel \\
               --broad \\
-              >> ${sampleid}/${sampleid}.macs2.sysout 2>&1
+              >> ${sampleid}/sysout/${sampleid}.macs2.sysout 2>&1
         """
 }
 
@@ -1014,7 +1014,7 @@ process merge_replicate_macs2_homer {
 
     tag "$sampleid"
 
-    publishDir "${params.outdir}/align/mergeReplicate/macs2", mode: 'copy'
+    publishDir "${params.outdir}/align/replicateLevel/macs2", mode: 'copy'
 
     input:
     set val(sampleid), file(peak) from merge_replicate_macs2_homer_in_ch
@@ -1023,17 +1023,17 @@ process merge_replicate_macs2_homer {
 
     output:
     set val(sampleid), file("*/*.annotatePeaks.txt") into merge_replicate_macs2_homer_ch
-    set val(sampleid), file("*/*.annotatePeaks.sysout") into merge_replicate_macs2_homer_sysout_ch
+    set val(sampleid), file("*/*/*.annotatePeaks.sysout") into merge_replicate_macs2_homer_sysout_ch
 
     script:
         """
-        mkdir -p ${sampleid}
+        mkdir -p ${sampleid}/sysout
         annotatePeaks.pl ${peak} \\
                          ${fasta} \\
                          -gid \\
                          -gtf ${gtf} \\
                          > ${sampleid}/${sampleid}_peaks.homer.annotatePeaks.txt \\
-                         2> ${sampleid}/${sampleid}_peaks.homer.annotatePeaks.sysout
+                         2> ${sampleid}/sysout/${sampleid}_peaks.homer.annotatePeaks.sysout
         """
 }
 
@@ -1042,7 +1042,7 @@ process merge_replicate_macs2_frip {
 
     tag "$sampleid"
 
-    publishDir "${params.outdir}/align/mergeReplicate/macs2", mode: 'copy'
+    publishDir "${params.outdir}/align/replicateLevel/macs2", mode: 'copy'
 
     input:
     set val(sampleid), file(peak), file(bam), file(flagstat) from merge_replicate_macs2_frip_in_ch.join(merge_replicate_rmdup_macs2_frip_ch, by: [0]).join(merge_replicate_rmdup_flagstat_macs2_frip_ch, by: [0])
@@ -1088,7 +1088,7 @@ process merge_replicate_macs2_qc {
 
    tag "$name"
 
-   publishDir "${params.outdir}/align/mergeReplicate/macs2/qc", mode: 'copy'
+   publishDir "${params.outdir}/align/replicateLevel/macs2/qc", mode: 'copy'
 
    input:
    set val(name), val(sampleids), file(peaks) from merge_replicate_macs2_qc_in_ch
@@ -1111,7 +1111,7 @@ process merge_replicate_macs2_merge_peaks {
 
    tag "$name"
 
-   publishDir "${params.outdir}/align/mergeReplicate/macs2/merged_peaks", mode: 'copy'
+   publishDir "${params.outdir}/align/replicateLevel/macs2/merged_peaks", mode: 'copy'
 
    input:
    set val(name), val(sampleids), file(peaks) from merge_replicate_macs2_merge_peaks_in_ch
@@ -1138,7 +1138,7 @@ process merge_replicate_macs2_merge_peaks_intersect_plot {
 
    tag "$name"
 
-   publishDir "${params.outdir}/align/mergeReplicate/macs2/merged_peaks", mode: 'copy'
+   publishDir "${params.outdir}/align/replicateLevel/macs2/merged_peaks", mode: 'copy'
 
    input:
    set val(name), file(intersect) from merge_replicate_macs2_merge_peaks_intersect_ch
@@ -1157,7 +1157,11 @@ process merge_replicate_macs2_merge_peaks_homer {
 
     tag "${name}"
 
-    publishDir "${params.outdir}/align/mergeReplicate/macs2/merged_peaks", mode: 'copy'
+    publishDir "${params.outdir}/align/replicateLevel/macs2/merged_peaks", mode: 'copy',
+                saveAs: {filename ->
+                            if (filename.endsWith(".txt")) "$filename"
+                            else if (filename.endsWith(".sysout")) "sysout/$filename"
+                        }
 
     input:
     set val(name), file(bed) from merge_replicate_macs2_merge_peaks_bed_ch
@@ -1186,7 +1190,7 @@ process merge_replicate_macs2_merge_peaks_homer {
 // GET LIST OF REPLICATE LEVEL BAM FILES
 merge_replicate_name_bam_merge_replicate_featurecounts_ch.map { it -> [ "merged_bam", [it[1]] ] }
                                                          .groupTuple(by: [0])
-                                                         .map { it ->  [ it[1].flatten().sort().collect{ it.getName().replace(".mRp.rmD.bam","") },
+                                                         .map { it ->  [ it[1].flatten().sort().collect{ it.getName().replace(".RpL.rmD.bam","") },
                                                                          it[1].flatten().sort() ] }
                                                          .set { merge_replicate_name_bam_merge_replicate_featurecounts_ch }
 
@@ -1196,15 +1200,21 @@ process merge_replicate_macs2_merge_peaks_featurecounts {
 
     label 'highcpu'
 
-    publishDir "${params.outdir}/align/mergeReplicate/macs2/merged_peaks", mode: 'copy'
+    publishDir "${params.outdir}/align/replicateLevel/macs2/merged_peaks", mode: 'copy',
+                saveAs: {filename ->
+                            if (filename.endsWith(".txt")) "$filename"
+                            else if (filename.endsWith(".summary")) "$filename"
+                            else if (filename.endsWith(".sysout")) "sysout/$filename"
+                        }
 
     input:
     set val (sampleids), file(bams) from merge_replicate_name_bam_merge_replicate_featurecounts_ch
     set val(name), file(saf) from merge_replicate_macs2_merge_peaks_saf_ch.collect()
 
     output:
-    set val(name), file("*.featureCounts.txt") into merge_replicate_macs2_merge_peaks_featurecounts_ch
-    set val(name), file("*.featureCounts.sysout") into merge_replicate_macs2_merge_peaks_featurecounts_sysout_ch
+    set val(name), file("*.txt") into merge_replicate_macs2_merge_peaks_featurecounts_ch
+    set val(name), file("*.summary") into merge_replicate_macs2_merge_peaks_featurecounts_summary_ch
+    set val(name), file("*.sysout") into merge_replicate_macs2_merge_peaks_featurecounts_sysout_ch
 
     script:
         """
@@ -1229,19 +1239,19 @@ process merge_replicate_macs2_merge_peaks_differential {
 
     tag "${name}"
 
-    publishDir "${params.outdir}/align/mergeReplicate/macs2/merged_peaks", mode: 'copy'
+    publishDir "${params.outdir}/align/replicateLevel/macs2/merged_peaks", mode: 'copy'
 
     input:
     set val(name), file(counts) from merge_replicate_macs2_merge_peaks_featurecounts_ch
 
     output:
     set val(name), file("deseq2/*") into merge_replicate_macs2_merge_peaks_differential_ch
-    file "*.txt" into merge_replicate_macs2_merge_peaks_differential_complete_ch
+    file "deseq2/complete.txt" into merge_replicate_macs2_merge_peaks_differential_complete_ch
 
     script:
         """
-        Rscript $baseDir/bin/featurecounts_deseq2.R -i ${counts} -b '.mRp.rmD.bam' -o ./deseq2 -p ${name}
-        touch merge_replicate_macs2_merge_peaks_differential.complete.txt
+        Rscript $baseDir/bin/featurecounts_deseq2.R -i ${counts} -b '.RpL.rmD.bam' -o ./deseq2 -p ${name}
+        touch ./deseq2/complete.txt
         """
 }
 
@@ -1269,7 +1279,7 @@ process merge_sample {
 
     label 'lowcpu'
 
-    publishDir "${params.outdir}/align/mergeSample", mode: 'copy',
+    publishDir "${params.outdir}/align/sampleLevel", mode: 'copy',
                 saveAs: {filename ->
                             if (filename.endsWith(".sysout")) "sysout/$filename"
                             else null
@@ -1287,7 +1297,7 @@ process merge_sample {
     replicates_exist
 
     script:
-        out_prefix="${sampleid}.mSm"
+        out_prefix="${sampleid}.SmL"
         bam_files = bams.findAll { it.toString().endsWith('.bam') }.sort()
         flagstat_files = bams.findAll { it.toString().endsWith('.flagstat') }.sort()
         if (bam_files.size() > 1) {
@@ -1320,7 +1330,7 @@ process merge_sample_markdup {
 
     label 'lowcpu'
 
-    publishDir "${params.outdir}/align/mergeSample", mode: 'copy',
+    publishDir "${params.outdir}/align/sampleLevel", mode: 'copy',
                 saveAs: {filename ->
                             if (filename.endsWith(".sysout")) "sysout/$filename"
                             else if (filename.endsWith(".metrics.txt")) "picard_metrics/$filename"
@@ -1340,7 +1350,7 @@ process merge_sample_markdup {
     replicates_exist
 
     script:
-        out_prefix="${sampleid}.mSm.mkD"
+        out_prefix="${sampleid}.SmL.mkD"
         bam_files = orphan_bams.findAll { it.toString().endsWith('.bam') }.sort()
         flagstat_files = orphan_bams.findAll { it.toString().endsWith('.flagstat') }.sort()
         if (bam_files.size() > 1) {
@@ -1374,7 +1384,7 @@ process merge_sample_rmdup {
 
     tag "$sampleid"
 
-    publishDir "${params.outdir}/align/mergeSample", mode: 'copy',
+    publishDir "${params.outdir}/align/sampleLevel", mode: 'copy',
                 saveAs: {filename ->
                             if (filename.endsWith(".flagstat")) "flagstat/$filename"
                             else if (filename.endsWith(".bam")) "$filename"
@@ -1396,7 +1406,7 @@ process merge_sample_rmdup {
     replicates_exist
 
     script:
-        out_prefix="${sampleid}.mSm.rmD"
+        out_prefix="${sampleid}.SmL.rmD"
         bam_files = orphan_bams.findAll { it.toString().endsWith('.bam') }.sort()
         if (bam_files.size() > 1) {
             """
@@ -1431,7 +1441,7 @@ process merge_sample_bedgraph {
 
     tag "$sampleid"
 
-    publishDir "${params.outdir}/align/mergeSample/bigwig", mode: 'copy',
+    publishDir "${params.outdir}/align/sampleLevel/bigwig", mode: 'copy',
                 saveAs: {filename ->
                             if (filename.endsWith(".txt")) "scale_factor/$filename"
                             else null
@@ -1449,7 +1459,7 @@ process merge_sample_bedgraph {
     replicates_exist
 
     script:
-        out_prefix="${sampleid}.mSm.rmD"
+        out_prefix="${sampleid}.SmL.rmD"
         """
         SCALE_FACTOR=\$(grep 'read1' ${flagstat} | awk '{print 1000000/\$1}')
         echo \$SCALE_FACTOR > ${out_prefix}.scale_factor.txt
@@ -1464,7 +1474,7 @@ process merge_sample_bigwig {
 
     label 'bigwig'
 
-    publishDir "${params.outdir}/align/mergeSample/bigwig", mode: 'copy'
+    publishDir "${params.outdir}/align/sampleLevel/bigwig", mode: 'copy'
 
     input:
     set val(sampleid), file(bedgraph) from merge_sample_bedgraph_ch
@@ -1477,7 +1487,7 @@ process merge_sample_bigwig {
     replicates_exist
 
     script:
-        out_prefix="${sampleid}.mSm.rmD"
+        out_prefix="${sampleid}.SmL.rmD"
         """
         wigToBigWig -clip ${bedgraph}  ${chrom_sizes} ${out_prefix}.bigWig
         """
@@ -1492,7 +1502,7 @@ process merge_sample_macs2 {
 
     tag "$sampleid"
 
-    publishDir "${params.outdir}/align/mergeSample/macs2", mode: 'copy'
+    publishDir "${params.outdir}/align/sampleLevel/macs2", mode: 'copy'
 
     input:
     set val(sampleid), file(bam) from merge_sample_rmdup_macs2_ch
@@ -1502,14 +1512,14 @@ process merge_sample_macs2 {
                                                   merge_sample_macs2_frip_in_ch,
                                                   merge_sample_macs2_merge_peaks_in_ch
     set val(sampleid), file("*/*.{gappedPeak,xls}") into merge_sample_macs2_output_ch
-    set val(sampleid), file("*/*.sysout") into merge_sample_macs2_sysout_ch
+    set val(sampleid), file("*/*/*.sysout") into merge_sample_macs2_sysout_ch
 
     when:
     replicates_exist
 
     script:
         """
-        mkdir -p ${sampleid}
+        mkdir -p ${sampleid}/sysout/
         macs2 callpeak \\
               --verbose=2 \\
               -t ${bam[0]} \\
@@ -1519,7 +1529,7 @@ process merge_sample_macs2 {
               --keep-dup all \\
               --nomodel \\
               --broad \\
-              >> ${sampleid}/${sampleid}.macs2.sysout 2>&1
+              >> ${sampleid}/sysout/${sampleid}.macs2.sysout 2>&1
         """
 }
 
@@ -1528,7 +1538,7 @@ process merge_sample_macs2_homer {
 
     tag "$sampleid"
 
-    publishDir "${params.outdir}/align/mergeSample/macs2", mode: 'copy'
+    publishDir "${params.outdir}/align/sampleLevel/macs2", mode: 'copy'
 
     input:
     set val(sampleid), file(peak) from merge_sample_macs2_homer_in_ch
@@ -1537,20 +1547,20 @@ process merge_sample_macs2_homer {
 
     output:
     set val(sampleid), file("*/*.annotatePeaks.txt") into merge_sample_macs2_homer_ch
-    set val(sampleid), file("*/*.annotatePeaks.sysout") into merge_sample_macs2_homer_sysout_ch
+    set val(sampleid), file("*/*/*.annotatePeaks.sysout") into merge_sample_macs2_homer_sysout_ch
 
     when:
     replicates_exist
 
     script:
         """
-        mkdir -p ${sampleid}
+        mkdir -p ${sampleid}/sysout/
         annotatePeaks.pl ${peak} \\
                          ${fasta} \\
                          -gid \\
                          -gtf ${gtf} \\
                          > ${sampleid}/${sampleid}_peaks.homer.annotatePeaks.txt \\
-                         2> ${sampleid}/${sampleid}_peaks.homer.annotatePeaks.sysout
+                         2> ${sampleid}/sysout/${sampleid}_peaks.homer.annotatePeaks.sysout
         """
 }
 
@@ -1559,7 +1569,7 @@ process merge_sample_macs2_frip {
 
     tag "$sampleid"
 
-    publishDir "${params.outdir}/align/mergeSample/macs2", mode: 'copy'
+    publishDir "${params.outdir}/align/sampleLevel/macs2", mode: 'copy'
 
     input:
     set val(sampleid), file(peak), file(bam), file(flagstat) from merge_sample_macs2_frip_in_ch.join(merge_sample_rmdup_macs2_frip_ch, by: [0]).join(merge_sample_rmdup_flagstat_macs2_frip_ch, by: [0])
@@ -1608,7 +1618,7 @@ process merge_sample_macs2_qc {
 
    tag "$name"
 
-   publishDir "${params.outdir}/align/mergeSample/macs2/qc", mode: 'copy'
+   publishDir "${params.outdir}/align/sampleLevel/macs2/qc", mode: 'copy'
 
    input:
    set val(name), val(sampleids), file(peaks) from merge_sample_macs2_qc_in_ch
@@ -1634,7 +1644,7 @@ process merge_sample_macs2_merge_peaks {
 
    tag "$name"
 
-   publishDir "${params.outdir}/align/mergeSample/macs2/merged_peaks", mode: 'copy'
+   publishDir "${params.outdir}/align/sampleLevel/macs2/merged_peaks", mode: 'copy'
 
    input:
    set val(name), val(sampleids), file(peaks) from merge_sample_macs2_merge_peaks_in_ch
@@ -1664,7 +1674,7 @@ process merge_sample_macs2_merge_peaks_intersect_plot {
 
    tag "$name"
 
-   publishDir "${params.outdir}/align/mergeSample/macs2/merged_peaks", mode: 'copy'
+   publishDir "${params.outdir}/align/sampleLevel/macs2/merged_peaks", mode: 'copy'
 
    input:
    set val(name), file(intersect) from merge_sample_macs2_merge_peaks_intersect_ch
@@ -1686,7 +1696,11 @@ process merge_sample_macs2_merge_peaks_homer {
 
     tag "${name}"
 
-    publishDir "${params.outdir}/align/mergeSample/macs2/merged_peaks", mode: 'copy'
+    publishDir "${params.outdir}/align/sampleLevel/macs2/merged_peaks", mode: 'copy',
+                saveAs: {filename ->
+                            if (filename.endsWith(".txt")) "$filename"
+                            else if (filename.endsWith(".sysout")) "sysout/$filename"
+                        }
 
     input:
     set val(name), file(bed) from merge_sample_macs2_merge_peaks_bed_ch
@@ -1717,7 +1731,7 @@ process merge_sample_macs2_merge_peaks_homer {
 // GET LIST OF REPLICATE LEVEL BAM FILES
 merge_replicate_name_bam_merge_sample_featurecounts_ch.map { it -> [ "merged_bam", [ it[1]] ]}
                                                       .groupTuple(by: [0])
-                                                      .map { it ->  [ it[1].flatten().sort().collect{ it.getName().replace(".mRp.rmD.bam","") },
+                                                      .map { it ->  [ it[1].flatten().sort().collect{ it.getName().replace(".RpL.rmD.bam","") },
                                                                       it[1].flatten().sort() ] }
                                                       .set { merge_replicate_name_bam_merge_sample_featurecounts_ch }
 
@@ -1727,18 +1741,21 @@ process merge_sample_macs2_merge_peaks_featurecounts {
 
     label 'highcpu'
 
-    publishDir "${params.outdir}/align/mergeSample/macs2/merged_peaks", mode: 'copy'
+    publishDir "${params.outdir}/align/sampleLevel/macs2/merged_peaks", mode: 'copy',
+                saveAs: {filename ->
+                            if (filename.endsWith(".txt")) "$filename"
+                            else if (filename.endsWith(".summary")) "$filename"
+                            else if (filename.endsWith(".sysout")) "sysout/$filename"
+                        }
 
     input:
     set val (sampleids), file(bams) from merge_replicate_name_bam_merge_sample_featurecounts_ch
     set val(name), file(saf) from merge_sample_macs2_merge_peaks_saf_ch.collect()
 
     output:
-    set val(name), file("*.featureCounts.txt") into merge_sample_macs2_merge_peaks_featurecounts_ch
-    set val(name), file("*.featureCounts.sysout") into merge_sample_macs2_merge_peaks_featurecounts_sysout_ch
-
-    when:
-    replicates_exist
+    set val(name), file("*.txt") into merge_sample_macs2_merge_peaks_featurecounts_ch
+    set val(name), file("*.summary") into merge_sample_macs2_merge_peaks_featurecounts_summary_ch
+    set val(name), file("*.sysout") into merge_sample_macs2_merge_peaks_featurecounts_sysout_ch
 
     script:
         """
@@ -1763,22 +1780,22 @@ process merge_sample_macs2_merge_peaks_differential {
 
     tag "${name}"
 
-    publishDir "${params.outdir}/align/mergeSample/macs2/merged_peaks", mode: 'copy'
+    publishDir "${params.outdir}/align/sampleLevel/macs2/merged_peaks", mode: 'copy'
 
     input:
     set val(name), file(counts) from merge_sample_macs2_merge_peaks_featurecounts_ch
 
     output:
     set val(name), file("deseq2/*") into merge_sample_macs2_merge_peaks_differential_ch
-    file "*.txt" into merge_sample_macs2_merge_peaks_differential_complete_ch
+    file "deseq2/complete.txt" into merge_sample_macs2_merge_peaks_differential_complete_ch
 
     when:
     replicates_exist
 
     script:
         """
-        Rscript $baseDir/bin/featurecounts_deseq2.R -i ${counts} -b '.mRp.rmD.bam' -o ./deseq2 -p ${name}
-        touch merge_sample_macs2_merge_peaks_differential.complete.txt
+        Rscript $baseDir/bin/featurecounts_deseq2.R -i ${counts} -b '.RpL.rmD.bam' -o ./deseq2 -p ${name}
+        touch ./deseq2/complete.txt
         """
 }
 
@@ -1796,8 +1813,6 @@ merge_replicate_bigwig_ch.map { it -> [ 'bigwig', it[1] ] }
                          .map { it -> it[1].sort() }
                          .set { merge_replicate_bigwig_ch }
 
-// CUSTOM SCRIPT TO REORDER TRACKS IN IGV SESSION FILE MORE SENSIBLY.
-// PROBABLY POSSIBLE WITH NEXTFLOW BUT MUCH EASIER IN PYTHON!
 if (replicates_exist) {
 
     // MERGE CHANNELS FOR SAMPLE LEVEL BIGWIG FILES
@@ -1806,55 +1821,39 @@ if (replicates_exist) {
                           .map { it -> it[1].sort() }
                           .set { merge_sample_bigwig_ch }
 
-    process igv_session {
+    merge_replicate_bigwig_ch.merge(merge_sample_bigwig_ch)
+                             .set{ merge_replicate_bigwig_ch }
 
-        tag "igv_session"
+    merge_replicate_macs2_merge_peaks_differential_complete_ch.merge(merge_sample_macs2_merge_peaks_differential_complete_ch)
+                                                              .map { it -> it[0] }
+                                                              .set { merge_replicate_macs2_merge_peaks_differential_complete_ch }
 
-        publishDir "${params.outdir}/igv", mode: 'copy'
+}
 
-        input:
-        file bigwigs from merge_replicate_bigwig_ch.merge(merge_sample_bigwig_ch)
-        file fasta from fasta_igv_ch.collect()
-        file gtf from gtf_igv_ch.collect()
-        file replicate_diff from merge_replicate_macs2_merge_peaks_differential_complete_ch.collect()
-        file sample_diff from merge_sample_macs2_merge_peaks_differential_complete_ch.collect()
+// CUSTOM SCRIPT TO REORDER TRACKS IN IGV SESSION FILE MORE SENSIBLY.
+// PROBABLY POSSIBLE WITH NEXTFLOW BUT MUCH EASIER IN PYTHON!
+process igv_session {
 
-        output:
-        file "*.{xml,txt}" into igv_session_ch
+    tag "igv_session"
 
-        script:
-            """
-            [ ! -f ${params.outdir_abspath}/genome/${fasta.getName()} ] && ln -s ${params.fasta} ${params.outdir_abspath}/genome/${fasta.getName()}
-            [ ! -f ${params.outdir_abspath}/genome/${gtf.getName()} ] && ln -s ${params.gtf} ${params.outdir_abspath}/genome/${gtf.getName()}
-            python $baseDir/bin/igv_get_files.py ${params.outdir_abspath} igv_files.txt
-            python $baseDir/bin/igv_files_to_session.py igv_session.xml igv_files.txt ${params.outdir_abspath}/genome/${fasta.getName()}
-            """
-    }
-} else {
+    publishDir "${params.outdir}/igv", mode: 'copy'
 
-    process igv_session {
+    input:
+    file bigwigs from merge_replicate_bigwig_ch
+    file fasta from fasta_igv_ch.collect()
+    file gtf from gtf_igv_ch.collect()
+    file replicate_diff from merge_replicate_macs2_merge_peaks_differential_complete_ch.collect()
 
-        tag "igv_session"
+    output:
+    file "*.{xml,txt}" into igv_session_ch
 
-        publishDir "${params.outdir}/igv", mode: 'copy'
-
-        input:
-        file bigwigs from merge_replicate_bigwig_ch
-        file fasta from fasta_igv_ch.collect()
-        file gtf from gtf_igv_ch.collect()
-        file replicate_diff from merge_replicate_macs2_merge_peaks_differential_complete_ch.collect()
-
-        output:
-        file "*.{xml,txt}" into igv_session_ch
-
-        script:
-            """
-            [ ! -f ${params.outdir_abspath}/genome/${fasta.getName()} ] && ln -s ${params.fasta} ${params.outdir_abspath}/genome/${fasta.getName()}
-            [ ! -f ${params.outdir_abspath}/genome/${gtf.getName()} ] && ln -s ${params.gtf} ${params.outdir_abspath}/genome/${gtf.getName()}
-            python $baseDir/bin/igv_get_files.py ${params.outdir_abspath} igv_files.txt
-            python $baseDir/bin/igv_files_to_session.py igv_session.xml igv_files.txt ${params.outdir_abspath}/genome/${fasta.getName()}
-            """
-      }
+    script:
+        """
+        [ ! -f ${params.outdir_abspath}/genome/${fasta.getName()} ] && ln -s ${params.fasta} ${params.outdir_abspath}/genome/${fasta.getName()}
+        [ ! -f ${params.outdir_abspath}/genome/${gtf.getName()} ] && ln -s ${params.gtf} ${params.outdir_abspath}/genome/${gtf.getName()}
+        python $baseDir/bin/igv_get_files.py ${params.outdir_abspath} igv_files.txt
+        python $baseDir/bin/igv_files_to_session.py igv_session.xml igv_files.txt ${params.outdir_abspath}/genome/${fasta.getName()}
+        """
 }
 
 ///////////////////////////////////////////////////////////////////////////////

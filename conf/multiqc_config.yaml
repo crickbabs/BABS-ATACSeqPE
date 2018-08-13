@@ -13,8 +13,8 @@ fn_clean_exts:
     - 'screen.txt'
     - 'sorted.bam'
     - 'mkD'
-    - 'mRp'
-    - 'mSm'
+    - 'RpL'
+    - 'SmL'
 
 module_order:
     - fastqc:
@@ -44,14 +44,14 @@ module_order:
         name: 'SAMTools (run-level; filtered)'
         info: 'This section of the report shows SAMTools results at the run-level after read filtering.'
         path_filters:
-            - '*_L?.mkD.flT.sorted.bam*'
+            - '*_L?.clN.sorted.bam*'
     - samtools:
         name: 'SAMTools (replicate-level; filtered)'
         info: 'This section of the report shows SAMTools results at the replicate-level after removal of duplicate reads.'
         path_filters:
-            - '*mRp.rmD*'
+            - '*RpL.rmD*'
     - samtools:
         name: 'SAMTools (sample-level; filtered)'
         info: 'This section of the report shows SAMTools results at the sample-level after removal of duplicate reads.'
         path_filters:
-            - '*mSm.rmD*'
+            - '*SmL.rmD*'

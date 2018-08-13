@@ -38,12 +38,12 @@ def igv_get_files(ResultsDir,OutFile):
 
     ## GET SAMPLE-LEVEL FILES
     fileList = []
-    fileList += [(x,'0,0,0') for x in funcs.recursive_glob(os.path.join(ResultsDir,'align/mergeSample/macs2/merged_peaks/'), 'merged_peaks.bed')]
-    fileList += [(x,'255,0,0') for x in funcs.recursive_glob(os.path.join(ResultsDir,'align/mergeSample/macs2/merged_peaks/deseq2/'), '*.FDR0.01.results.bed')]
+    fileList += [(x,'0,0,0') for x in funcs.recursive_glob(os.path.join(ResultsDir,'align/sampleLevel/macs2/merged_peaks/'), 'merged_peaks.bed')]
+    fileList += [(x,'255,0,0') for x in funcs.recursive_glob(os.path.join(ResultsDir,'align/sampleLevel/macs2/merged_peaks/deseq2/'), '*.FDR0.01.results.bed')]
 
     sampleFileDict = {}
-    for ifile in funcs.recursive_glob(os.path.join(ResultsDir,'align/mergeSample/macs2/'), '*.broadPeak') \
-               + funcs.recursive_glob(os.path.join(ResultsDir,'align/mergeSample/bigwig/'), '*.bigWig'):
+    for ifile in funcs.recursive_glob(os.path.join(ResultsDir,'align/sampleLevel/macs2/'), '*.broadPeak') \
+               + funcs.recursive_glob(os.path.join(ResultsDir,'align/sampleLevel/bigwig/'), '*.bigWig'):
         extension = os.path.splitext(ifile)[1]
         sampleid = ''
         if extension == '.broadPeak':
@@ -51,7 +51,7 @@ def igv_get_files(ResultsDir,OutFile):
         elif extension == '.narrowPeak':
             sampleid = os.path.basename(ifile).replace('_peaks.narrowPeak','')
         elif extension == '.bigWig':
-            sampleid = os.path.basename(ifile).replace('.mSm.rmD.bigWig','')
+            sampleid = os.path.basename(ifile).replace('.SmL.rmD.bigWig','')
         if not sampleFileDict.has_key(sampleid):
             sampleFileDict[sampleid] = []
         sampleFileDict[sampleid].append((ifile,'0,0,178'))
@@ -59,12 +59,12 @@ def igv_get_files(ResultsDir,OutFile):
         fileList += sampleFileDict[sampleid]
 
     ## GET REPLICATE-LEVEL FILES
-    fileList += [(x,'0,0,0') for x in funcs.recursive_glob(os.path.join(ResultsDir,'align/mergeReplicate/macs2/merged_peaks/'), 'merged_peaks.bed')]
-    fileList += [(x,'0,102,102') for x in funcs.recursive_glob(os.path.join(ResultsDir,'align/mergeReplicate/macs2/merged_peaks/deseq2/'), '*.FDR0.01.results.bed')]
+    fileList += [(x,'0,0,0') for x in funcs.recursive_glob(os.path.join(ResultsDir,'align/replicateLevel/macs2/merged_peaks/'), 'merged_peaks.bed')]
+    fileList += [(x,'0,102,102') for x in funcs.recursive_glob(os.path.join(ResultsDir,'align/replicateLevel/macs2/merged_peaks/deseq2/'), '*.FDR0.01.results.bed')]
 
     sampleFileDict = {}
-    for ifile in funcs.recursive_glob(os.path.join(ResultsDir,'align/mergeReplicate/macs2/'), '*.broadPeak') \
-               + funcs.recursive_glob(os.path.join(ResultsDir,'align/mergeReplicate/bigwig/'), '*.bigWig'):
+    for ifile in funcs.recursive_glob(os.path.join(ResultsDir,'align/replicateLevel/macs2/'), '*.broadPeak') \
+               + funcs.recursive_glob(os.path.join(ResultsDir,'align/replicateLevel/bigwig/'), '*.bigWig'):
         extension = os.path.splitext(ifile)[1]
         sampleid = ''
         if extension == '.broadPeak':
@@ -72,7 +72,7 @@ def igv_get_files(ResultsDir,OutFile):
         elif extension == '.narrowPeak':
             sampleid = os.path.basename(ifile).replace('_peaks.narrowPeak','')
         elif extension == '.bigWig':
-            sampleid = os.path.basename(ifile).replace('.mRp.rmD.bigWig','')
+            sampleid = os.path.basename(ifile).replace('.RpL.rmD.bigWig','')
         if not sampleFileDict.has_key(sampleid):
             sampleFileDict[sampleid] = []
         sampleFileDict[sampleid].append((ifile,'0,102,0'))

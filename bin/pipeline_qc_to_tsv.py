@@ -42,16 +42,16 @@ def pipeline_qc_to_tsv(ResultsDir,MitoName,OutFile):
                     ('RUN-LEVEL', 'flagstat', 'unfiltered', ResultsDir, '.mkD.sorted.bam.flagstat'),
                     ('RUN-LEVEL', 'idxstats', 'unfiltered', ResultsDir, '.mkD.sorted.bam.idxstats'),
                     ('RUN-LEVEL', 'picard_insert_metrics', 'unfiltered', ResultsDir, '.mkD.CollectMultipleMetrics.insert_size_metrics'),
-                    ('RUN-LEVEL', 'flagstat', 'filter', ResultsDir, '.mkD.flT.sorted.bam.flagstat'),
-                    ('RUN-LEVEL', 'idxstats', 'filter', ResultsDir, '.mkD.flT.sorted.bam.idxstats'),
+                    ('RUN-LEVEL', 'flagstat', 'filter', ResultsDir, '.clN.sorted.bam.flagstat'),
+                    ('RUN-LEVEL', 'idxstats', 'filter', ResultsDir, '.clN.sorted.bam.idxstats'),
 
-                    ('REPLICATE-LEVEL', 'flagstat', '', os.path.join(ResultsDir,'align/mergeReplicate/'), '.mRp.rmD.sorted.bam.flagstat'),
-                    ('REPLICATE-LEVEL', 'macs2', '', os.path.join(ResultsDir,'align/mergeReplicate/'), '_peaks.broadPeak'),
-                    ('REPLICATE-LEVEL', 'frip', '', os.path.join(ResultsDir,'align/mergeReplicate/'), '_peaks.frip.txt'),
+                    ('REPLICATE-LEVEL', 'flagstat', '', os.path.join(ResultsDir,'align/replicateLevel/'), '.RpL.rmD.sorted.bam.flagstat'),
+                    ('REPLICATE-LEVEL', 'macs2', '', os.path.join(ResultsDir,'align/replicateLevel/'), '_peaks.broadPeak'),
+                    ('REPLICATE-LEVEL', 'frip', '', os.path.join(ResultsDir,'align/replicateLevel/'), '_peaks.frip.txt'),
 
-                    ('SAMPLE-LEVEL', 'flagstat', '', os.path.join(ResultsDir,'align/mergeSample/'), '.mSm.rmD.sorted.bam.flagstat'),
-                    ('SAMPLE-LEVEL', 'macs2', '', os.path.join(ResultsDir,'align/mergeSample/'), '_peaks.broadPeak'),
-                    ('SAMPLE-LEVEL', 'frip', '', os.path.join(ResultsDir,'align/mergeSample/'), '_peaks.frip.txt')]
+                    ('SAMPLE-LEVEL', 'flagstat', '', os.path.join(ResultsDir,'align/sampleLevel/'), '.SmL.rmD.sorted.bam.flagstat'),
+                    ('SAMPLE-LEVEL', 'macs2', '', os.path.join(ResultsDir,'align/sampleLevel/'), '_peaks.broadPeak'),
+                    ('SAMPLE-LEVEL', 'frip', '', os.path.join(ResultsDir,'align/sampleLevel/'), '_peaks.frip.txt')]
 
     headerDict = {}
     qcDict = {}

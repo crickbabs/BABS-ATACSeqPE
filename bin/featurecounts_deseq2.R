@@ -209,40 +209,42 @@ if (file.exists(ResultsFile) == FALSE) {
         write.table(comp.table, file=CompResultsFile, col.names=TRUE, row.names=FALSE, sep='\t', quote=FALSE)
 
         ## FILTER RESULTS BY FDR & LOGFC AND WRITE RESULTS FILE
-        pdf(file=paste(CompOutDir,CompPrefix,".deseq2.plots.pdf",sep=""),width=10,height=8)
-        for (MIN_FDR in c(0.01,0.05)) {
+				pdf(file=paste(CompOutDir,CompPrefix,".deseq2.plots.pdf",sep=""),width=10,height=8)
+				if (length(comp.samples) > 2) {
+		        for (MIN_FDR in c(0.01,0.05)) {
 
-            ## SUBSET RESULTS BY FDR
-            pass.fdr.table <- subset(comp.table, padj < MIN_FDR)
-            pass.fdr.up.table <- subset(comp.table, padj < MIN_FDR & log2FoldChange > 0)
-            pass.fdr.down.table <- subset(comp.table, padj < MIN_FDR & log2FoldChange < 0)
+		            ## SUBSET RESULTS BY FDR
+		            pass.fdr.table <- subset(comp.table, padj < MIN_FDR)
+		            pass.fdr.up.table <- subset(comp.table, padj < MIN_FDR & log2FoldChange > 0)
+		            pass.fdr.down.table <- subset(comp.table, padj < MIN_FDR & log2FoldChange < 0)
 
-            ## SUBSET RESULTS BY FDR AND LOGFC
-            pass.fdr.logFC.table <- subset(comp.table, padj < MIN_FDR & abs(log2FoldChange) >= 1)
-            pass.fdr.logFC.up.table <- subset(comp.table, padj < MIN_FDR & abs(log2FoldChange) >= 1 & log2FoldChange > 0)
-            pass.fdr.logFC.down.table <- subset(comp.table, padj < MIN_FDR & abs(log2FoldChange) >= 1 & log2FoldChange < 0)
+		            ## SUBSET RESULTS BY FDR AND LOGFC
+		            pass.fdr.logFC.table <- subset(comp.table, padj < MIN_FDR & abs(log2FoldChange) >= 1)
+		            pass.fdr.logFC.up.table <- subset(comp.table, padj < MIN_FDR & abs(log2FoldChange) >= 1 & log2FoldChange > 0)
+		            pass.fdr.logFC.down.table <- subset(comp.table, padj < MIN_FDR & abs(log2FoldChange) >= 1 & log2FoldChange < 0)
 
-            ## WRITE RESULTS FILE
-            CompResultsFile <- paste(CompOutDir,CompPrefix,".deseq2.FDR",MIN_FDR,".results.txt",sep="")
-            CompBEDFile <- paste(CompOutDir,CompPrefix,".deseq2.FDR",MIN_FDR,".results.bed",sep="")
-            write.table(pass.fdr.table, file=CompResultsFile, col.names=TRUE, row.names=FALSE, sep='\t', quote=FALSE)
-            write.table(pass.fdr.table[,c("Chr","Start","End","Geneid","log2FoldChange","Strand")], file=CompBEDFile, col.names=FALSE, row.names=FALSE, sep='\t', quote=FALSE)
+		            ## WRITE RESULTS FILE
+		            CompResultsFile <- paste(CompOutDir,CompPrefix,".deseq2.FDR",MIN_FDR,".results.txt",sep="")
+		            CompBEDFile <- paste(CompOutDir,CompPrefix,".deseq2.FDR",MIN_FDR,".results.bed",sep="")
+		            write.table(pass.fdr.table, file=CompResultsFile, col.names=TRUE, row.names=FALSE, sep='\t', quote=FALSE)
+		            write.table(pass.fdr.table[,c("Chr","Start","End","Geneid","log2FoldChange","Strand")], file=CompBEDFile, col.names=FALSE, row.names=FALSE, sep='\t', quote=FALSE)
 
-            CompResultsFile <- paste(CompOutDir,CompPrefix,".deseq2.FDR",MIN_FDR,".FC2.results.txt",sep="")
-            CompBEDFile <- paste(CompOutDir,CompPrefix,".deseq2.FDR",MIN_FDR,".FC2.results.bed",sep="")
-            write.table(pass.fdr.logFC.table, file=CompResultsFile, col.names=TRUE, row.names=FALSE, sep='\t', quote=FALSE)
-            write.table(pass.fdr.logFC.table[,c("Chr","Start","End","Geneid","log2FoldChange","Strand")], file=CompBEDFile, col.names=FALSE, row.names=FALSE, sep='\t', quote=FALSE)
+		            CompResultsFile <- paste(CompOutDir,CompPrefix,".deseq2.FDR",MIN_FDR,".FC2.results.txt",sep="")
+		            CompBEDFile <- paste(CompOutDir,CompPrefix,".deseq2.FDR",MIN_FDR,".FC2.results.bed",sep="")
+		            write.table(pass.fdr.logFC.table, file=CompResultsFile, col.names=TRUE, row.names=FALSE, sep='\t', quote=FALSE)
+		            write.table(pass.fdr.logFC.table[,c("Chr","Start","End","Geneid","log2FoldChange","Strand")], file=CompBEDFile, col.names=FALSE, row.names=FALSE, sep='\t', quote=FALSE)
 
-            ## MA PLOT & VOLCANO PLOT
-            DESeq2::plotMA(comp.results, main=paste("MA plot FDR <= ",MIN_FDR,sep=""), ylim=c(-2,2),alpha=MIN_FDR)
-            plot(comp.table$log2FoldChange, -1*log10(comp.table$padj), col=ifelse(comp.table$padj<=MIN_FDR, "red", "black"), xlab="logFC", ylab="-1*log10(FDR)", main=paste("Volcano plot FDR <=",MIN_FDR,sep=" "), pch=20)
+		            ## MA PLOT & VOLCANO PLOT
+		            DESeq2::plotMA(comp.results, main=paste("MA plot FDR <= ",MIN_FDR,sep=""), ylim=c(-2,2),alpha=MIN_FDR)
+		            plot(comp.table$log2FoldChange, -1*log10(comp.table$padj), col=ifelse(comp.table$padj<=MIN_FDR, "red", "black"), xlab="logFC", ylab="-1*log10(FDR)", main=paste("Volcano plot FDR <=",MIN_FDR,sep=" "), pch=20)
 
-            ## ADD COUNTS TO LOGFILE
-            cat(CompPrefix," genes with FDR <= ",MIN_FDR,": ",nrow(pass.fdr.table)," (up=",nrow(pass.fdr.up.table),", down=",nrow(pass.fdr.down.table),")","\n",file=LogFile,append=TRUE,sep="")
-            cat(CompPrefix," genes with FDR <= ",MIN_FDR," & FC > 2: ",nrow(pass.fdr.logFC.table)," (up=",nrow(pass.fdr.logFC.up.table),", down=",nrow(pass.fdr.logFC.down.table),")","\n",file=LogFile,append=TRUE,sep="")
+		            ## ADD COUNTS TO LOGFILE
+		            cat(CompPrefix," genes with FDR <= ",MIN_FDR,": ",nrow(pass.fdr.table)," (up=",nrow(pass.fdr.up.table),", down=",nrow(pass.fdr.down.table),")","\n",file=LogFile,append=TRUE,sep="")
+		            cat(CompPrefix," genes with FDR <= ",MIN_FDR," & FC > 2: ",nrow(pass.fdr.logFC.table)," (up=",nrow(pass.fdr.logFC.up.table),", down=",nrow(pass.fdr.logFC.down.table),")","\n",file=LogFile,append=TRUE,sep="")
 
-        }
-        cat("\n",file=LogFile,append=TRUE,sep="")
+		        }
+		        cat("\n",file=LogFile,append=TRUE,sep="")
+				}
 
         ## SAMPLE CORRELATION HEATMAP
         rld.subset <- assay(rld)[,comp.samples]
