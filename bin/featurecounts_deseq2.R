@@ -60,7 +60,7 @@ colnames(count.table) <- gsub(opt$bam_suffix,"",colnames(count.table))
 colnames(count.table) <- as.character(lapply(colnames(count.table), function (x) tail(strsplit(x,'.',fixed=TRUE)[[1]],1)))
 rownames(count.table) <- count.table$Geneid
 interval.table <- count.table[,1:6]
-count.table <- count.table[,7:ncol(count.table)]
+count.table <- count.table[,7:ncol(count.table),drop=FALSE]
 
 ################################################
 ################################################
@@ -82,7 +82,7 @@ if (length(unique(groups)) == 1) {
 
 DDSFile <- paste(opt$outprefix,".dds.rld.RData",sep="")
 if (file.exists(DDSFile) == FALSE) {
-    counts <- count.table[,samples.vec]
+    counts <- count.table[,samples.vec,drop=FALSE]
     coldata <- data.frame(row.names=colnames(counts),condition=groups)
     dds <- DESeqDataSetFromMatrix(countData = round(counts), colData = coldata, design = ~ condition)
     dds <- DESeq(dds)

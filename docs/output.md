@@ -43,7 +43,7 @@ The following directories will be created in the output directory after the pipe
 
 #### Sample-level results
 
-`align/replicateLevel/` and `align/sampleLevel/` have exactly the same directory structure. The only difference is that multiple libraries sequenced from the same sample will be merged in the `replicateLevel/` directory, and all the replicates associated with a sample will be merged in the `sampleLevel/` directory. The main reasoning behind merging the replicates at the sample-level was to improve the coverage in order to call more accurately defined and robust peaksets. This may have some downsides especially if there is high variability amongst the replicates. However, for the most part it seems to work quite well.
+`align/replicateLevel/` and `align/sampleLevel/` have exactly the same directory structure. The only difference is that multiple libraries sequenced from the same sample will be merged in the `replicateLevel/` directory whereas all the replicates associated with a sample will be merged in the `sampleLevel/` directory. The main reasoning behind merging the replicates at the sample-level was to improve the coverage in order to call more accurately defined and robust peaksets. This is also useful for downstream analyses such as [motif footprinting](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3959825/) which requires high coverage.
 
 ### `genome/`
 
