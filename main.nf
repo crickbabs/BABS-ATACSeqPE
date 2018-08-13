@@ -170,7 +170,8 @@ if( params.design && file(params.design).exists() ){
                        row.run,
                        file(row.fastq_1),
                        file(row.fastq_2) ] }
-      .into { design_raw_fastqc_ch;
+      .into { design_replicate_exist_ch;
+              design_raw_fastqc_ch;
               design_raw_fastqscreen_ch;
               design_cutadapt_ch }
 } else {
@@ -227,6 +228,21 @@ try {
               "  Please run `nextflow self-update` to update Nextflow.\n" +
               "============================================================"
 }
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/* --                                                                     -- */
+/* --                         GLOBAL VARIABLES                            -- */
+/* --                                                                     -- */
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+// BOOLEAN VALUE FOR REPLICATES EXISTING IN DESIGN
+replicates_exist = design_replicate_exist_ch.map { it -> [ it[2].toInteger() ] }
+                                            .flatten()
+                                            .max()
+                                            .map { it -> it > 1 }
+                                            .val
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -677,7 +693,7 @@ process rm_orphan {
 }
 
 // SORT ORPHAN BAM FILE BY COORDINATE
-process  rm_orphan_sort_bam {
+process rm_orphan_sort_bam {
 
     tag "$sampleid"
 
@@ -863,7 +879,7 @@ process merge_replicate_rmdup {
             """
         } else {
             """
-            samtools view -bF 0x400 ${bam_files[0]} > ${out_prefix}.sorted.bam
+            cp ${bam_files[0]} ${out_prefix}.sorted.bam
             samtools index ${out_prefix}.sorted.bam
             samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
             """
@@ -1042,85 +1058,51 @@ process merge_replicate_macs2_frip {
         """
 }
 
-// GET LIST OF FRIP FILES ACROSS ALL SAMPLES FOR QC PLOT
-merge_replicate_macs2_frip_ch.map { it -> [ "macs2_frip", [it[1]] ] }
-                             .groupTuple(by: [0])
-                             .map { it ->  [ it[0],
-                                             it[1].flatten().sort().collect{ it.getName().replace("_peaks.frip.txt","") },
-                                             it[1].flatten().sort() ] }
-                             .set { merge_replicate_macs2_frip_collate_ch }
-
-// GENERATE PLOTS FOR FRIP SCORES ACROSS ALL SAMPLES
-process merge_replicate_macs2_fripqc {
-
-   tag "$name"
-
-   publishDir "${params.outdir}/align/mergeReplicate/macs2/qc", mode: 'copy'
-
-   input:
-   set val(name), val(sampleids), file(frips) from merge_replicate_macs2_frip_collate_ch
-
-   output:
-   file ("*.pdf") into merge_replicate_macs2_fripqc_ch
-
-   script:
-       """
-       Rscript $baseDir/bin/plot_frip.R -i ${frips.join(',')} -s ${sampleids.join(',')} -o ./ -p ${name}
-       """
-}
-
-// GET LIST OF HOMER ANNOTATED FILES ACROSS ALL SAMPLES FOR QC PLOTS
-merge_replicate_macs2_homer_ch.map { it -> [ "macs2_homer_annotation", [it[1]] ] }
-                              .groupTuple(by: [0])
-                              .map { it ->  [ it[0],
-                                              it[1].flatten().sort().collect{ it.getName().replace("_peaks.homer.annotatePeaks.txt","") },
-                                              it[1].flatten().sort() ] }
-                              .set { merge_replicate_macs2_homer_collate_ch }
-
-// GENERATE PLOTS FOR VARIOUS ASPECTS OF HOMER ANNOTATION ACROSS ALL SAMPLES
-process merge_replicate_macs2_homerqc {
-
-   tag "$name"
-
-   publishDir "${params.outdir}/align/mergeReplicate/macs2/qc", mode: 'copy'
-
-   input:
-   set val(name), val(sampleids), file(homers) from merge_replicate_macs2_homer_collate_ch
-
-   output:
-   file ("*.pdf") into merge_replicate_macs2_homerqc_ch
-
-   script:
-       """
-       Rscript $baseDir/bin/plot_homer.R -i ${homers.join(',')} -s ${sampleids.join(',')} -o ./ -p ${name}
-       """
-}
-
-// GET LIST OF PEAK ACROSS ALL SAMPLES FOR MERGING
+// GET LIST OF PEAK ACROSS ALL SAMPLES FOR MERGING AND QC PLOTS
 merge_replicate_macs2_merge_peaks_in_ch.map { it -> [ "merged_peaks", [it[1]] ] }
                                        .groupTuple(by: [0])
                                        .map { it ->  [ it[0],
                                                        it[1].flatten().sort().collect{ it.getName().replace("_peaks.broadPeak","") },
                                                        it[1].flatten().sort() ] }
-                                       .into { merge_replicate_macs2_merge_peaks_in_ch;
-                                               merge_replicate_macs2_peakqc_in_ch }
+                                       .into { merge_replicate_macs2_qc_in_ch;
+                                               merge_replicate_macs2_merge_peaks_in_ch }
 
-// GENERATE PLOTS FOR VARIOUS ASPECTS OF PEAKS ACROSS ALL SAMPLES
-process merge_replicate_macs2_peakqc {
+// GET LIST OF HOMER ANNOTATED FILES ACROSS ALL SAMPLES FOR QC PLOTS
+merge_replicate_macs2_homer_ch.map { it -> [ "macs2_homer", [it[1]] ] }
+                             .groupTuple(by: [0])
+                             .map { it ->  [ it[0],
+                                             it[1].flatten().sort().collect{ it.getName().replace("_peaks.homer.annotatePeaks.txt","") },
+                                             it[1].flatten().sort() ] }
+                             .set { merge_replicate_macs2_homer_collate_ch }
+
+// GET LIST OF FRIP FILES ACROSS ALL SAMPLES FOR QC PLOT
+merge_replicate_macs2_frip_ch.map { it -> [ "macs2_frip", [it[1]] ] }
+                            .groupTuple(by: [0])
+                            .map { it ->  [ it[0],
+                                            it[1].flatten().sort().collect{ it.getName().replace("_peaks.frip.txt","") },
+                                            it[1].flatten().sort() ] }
+                            .set { merge_replicate_macs2_frip_collate_ch }
+
+// GENERATE PLOTS FOR PEAKS, HOMER ANNOTATION AND FRIP SCORES ACROSS ALL SAMPLES
+process merge_replicate_macs2_qc {
 
    tag "$name"
 
    publishDir "${params.outdir}/align/mergeReplicate/macs2/qc", mode: 'copy'
 
    input:
-   set val(name), val(sampleids), file(peaks) from merge_replicate_macs2_peakqc_in_ch
+   set val(name), val(sampleids), file(peaks) from merge_replicate_macs2_qc_in_ch
+   set val(homer_name), val(homer_sampleids), file(homers) from merge_replicate_macs2_homer_collate_ch
+   set val(frip_name), val(frip_sampleids), file(frips) from merge_replicate_macs2_frip_collate_ch
 
    output:
-   file ("*.{txt,pdf}") into merge_replicate_macs2_peakqc_ch
+   file ("*.{txt,pdf}") into merge_replicate_macs2_qc_ch
 
    script:
        """
-       Rscript $baseDir/bin/plot_macs2_peakqc.R -i ${peaks.join(',')} -s ${sampleids.join(',')} -o ./ -p macs2_peakqc
+       Rscript $baseDir/bin/plot_macs2_peakqc.R -i ${peaks.join(',')} -s ${sampleids.join(',')} -o ./ -p macs2_peak
+       Rscript $baseDir/bin/plot_homer.R -i ${homers.join(',')} -s ${homer_sampleids.join(',')} -o ./ -p ${homer_name}
+       Rscript $baseDir/bin/plot_frip.R -i ${frips.join(',')} -s ${frip_sampleids.join(',')} -o ./ -p ${frip_name}
        """
 }
 
@@ -1301,6 +1283,9 @@ process merge_sample {
     set val(sampleid), file("*.flagstat") into merge_sample_flagstat_ch
     set val(sampleid), file("*.sysout") into merge_sample_sysout_ch
 
+    when:
+    replicates_exist
+
     script:
         out_prefix="${sampleid}.mSm"
         bam_files = bams.findAll { it.toString().endsWith('.bam') }.sort()
@@ -1350,6 +1335,9 @@ process merge_sample_markdup {
     set val(sampleid), file("*.flagstat") into merge_sample_markdup_flagstat_ch
     set val(sampleid), file("*.metrics.txt") into merge_sample_markdup_metrics_ch
     set val(sampleid), file("*.sysout") into merge_sample_markdup_sysout_ch
+
+    when:
+    replicates_exist
 
     script:
         out_prefix="${sampleid}.mSm.mkD"
@@ -1404,6 +1392,9 @@ process merge_sample_rmdup {
                                                merge_sample_rmdup_flagstat_bedgraph_ch,
                                                merge_sample_rmdup_flagstat_macs2_frip_ch
 
+    when:
+    replicates_exist
+
     script:
         out_prefix="${sampleid}.mSm.rmD"
         bam_files = orphan_bams.findAll { it.toString().endsWith('.bam') }.sort()
@@ -1415,7 +1406,7 @@ process merge_sample_rmdup {
             """
         } else {
             """
-            samtools view -bF 0x400 ${bam_files[0]} > ${out_prefix}.sorted.bam
+            cp ${bam_files[0]} ${out_prefix}.sorted.bam
             samtools index ${out_prefix}.sorted.bam
             samtools flagstat ${out_prefix}.sorted.bam > ${out_prefix}.sorted.bam.flagstat
             """
@@ -1454,6 +1445,9 @@ process merge_sample_bedgraph {
     set val(sampleid), file("*.bg") into merge_sample_bedgraph_ch
     set val(sampleid), file("*.txt") into merge_sample_bedgraph_scale_ch
 
+    when:
+    replicates_exist
+
     script:
         out_prefix="${sampleid}.mSm.rmD"
         """
@@ -1478,6 +1472,9 @@ process merge_sample_bigwig {
 
     output:
     set val(sampleid), file("*.bigWig") into merge_sample_bigwig_ch
+
+    when:
+    replicates_exist
 
     script:
         out_prefix="${sampleid}.mSm.rmD"
@@ -1506,6 +1503,9 @@ process merge_sample_macs2 {
                                                   merge_sample_macs2_merge_peaks_in_ch
     set val(sampleid), file("*/*.{gappedPeak,xls}") into merge_sample_macs2_output_ch
     set val(sampleid), file("*/*.sysout") into merge_sample_macs2_sysout_ch
+
+    when:
+    replicates_exist
 
     script:
         """
@@ -1539,6 +1539,9 @@ process merge_sample_macs2_homer {
     set val(sampleid), file("*/*.annotatePeaks.txt") into merge_sample_macs2_homer_ch
     set val(sampleid), file("*/*.annotatePeaks.sysout") into merge_sample_macs2_homer_sysout_ch
 
+    when:
+    replicates_exist
+
     script:
         """
         mkdir -p ${sampleid}
@@ -1564,6 +1567,9 @@ process merge_sample_macs2_frip {
     output:
     set val(sampleid), file("*/*.frip.txt") into merge_sample_macs2_frip_ch
 
+    when:
+    replicates_exist
+
     script:
         """
         mkdir -p ${sampleid}
@@ -1571,6 +1577,23 @@ process merge_sample_macs2_frip {
         grep 'mapped (' ${flagstat} | awk -v a="\$READS_IN_PEAKS" '{print a/\$1}' > ${sampleid}/${sampleid}_peaks.frip.txt
         """
 }
+
+// GET LIST OF PEAK ACROSS ALL SAMPLES FOR MERGING AND QC PLOTS
+merge_sample_macs2_merge_peaks_in_ch.map { it -> [ "merged_peaks", [it[1]] ] }
+                                    .groupTuple(by: [0])
+                                    .map { it ->  [ it[0],
+                                                    it[1].flatten().sort().collect{ it.getName().replace("_peaks.broadPeak","") },
+                                                    it[1].flatten().sort() ] }
+                                    .into { merge_sample_macs2_qc_in_ch;
+                                            merge_sample_macs2_merge_peaks_in_ch }
+
+// GET LIST OF HOMER ANNOTATED FILES ACROSS ALL SAMPLES FOR QC PLOTS
+merge_sample_macs2_homer_ch.map { it -> [ "macs2_homer", [it[1]] ] }
+                           .groupTuple(by: [0])
+                           .map { it ->  [ it[0],
+                                           it[1].flatten().sort().collect{ it.getName().replace("_peaks.homer.annotatePeaks.txt","") },
+                                           it[1].flatten().sort() ] }
+                           .set { merge_sample_macs2_homer_collate_ch }
 
 // GET LIST OF FRIP FILES ACROSS ALL SAMPLES FOR QC PLOT
 merge_sample_macs2_frip_ch.map { it -> [ "macs2_frip", [it[1]] ] }
@@ -1580,77 +1603,29 @@ merge_sample_macs2_frip_ch.map { it -> [ "macs2_frip", [it[1]] ] }
                                           it[1].flatten().sort() ] }
                           .set { merge_sample_macs2_frip_collate_ch }
 
-// GENERATE PLOTS FOR FRIP SCORES ACROSS ALL SAMPLES
-process merge_sample_macs2_fripqc {
+// GENERATE PLOTS FOR PEAKS, HOMER ANNOTATION AND FRIP SCORES ACROSS ALL SAMPLES
+process merge_sample_macs2_qc {
 
    tag "$name"
 
    publishDir "${params.outdir}/align/mergeSample/macs2/qc", mode: 'copy'
 
    input:
-   set val(name), val(sampleids), file(frips) from merge_sample_macs2_frip_collate_ch
+   set val(name), val(sampleids), file(peaks) from merge_sample_macs2_qc_in_ch
+   set val(homer_name), val(homer_sampleids), file(homers) from merge_sample_macs2_homer_collate_ch
+   set val(frip_name), val(frip_sampleids), file(frips) from merge_sample_macs2_frip_collate_ch
 
    output:
-   file ("*.pdf") into merge_sample_macs2_fripqc_ch
+   file ("*.{txt,pdf}") into merge_sample_macs2_qc_ch
+
+   when:
+   replicates_exist
 
    script:
        """
-       Rscript $baseDir/bin/plot_frip.R -i ${frips.join(',')} -s ${sampleids.join(',')} -o ./ -p ${name}
-       """
-}
-
-// GET LIST OF HOMER ANNOTATED FILES ACROSS ALL SAMPLES FOR QC PLOTS
-merge_sample_macs2_homer_ch.map { it -> [ "macs2_homer_annotation", [it[1]] ] }
-                           .groupTuple(by: [0])
-                           .map { it ->  [ it[0],
-                                           it[1].flatten().sort().collect{ it.getName().replace("_peaks.homer.annotatePeaks.txt","") },
-                                           it[1].flatten().sort() ] }
-                           .set { merge_sample_macs2_homer_collate_ch }
-
-// GENERATE PLOTS FOR VARIOUS ASPECTS OF HOMER ANNOTATION ACROSS ALL SAMPLES
-process merge_sample_macs2_homerqc {
-
-   tag "$name"
-
-   publishDir "${params.outdir}/align/mergeSample/macs2/qc", mode: 'copy'
-
-   input:
-   set val(name), val(sampleids), file(homers) from merge_sample_macs2_homer_collate_ch
-
-   output:
-   file ("*.pdf") into merge_sample_macs2_homerqc_ch
-
-   script:
-       """
-       Rscript $baseDir/bin/plot_homer.R -i ${homers.join(',')} -s ${sampleids.join(',')} -o ./ -p ${name}
-       """
-}
-
-// GET LIST OF PEAK ACROSS ALL SAMPLES FOR MERGING
-merge_sample_macs2_merge_peaks_in_ch.map { it -> [ "merged_peaks", [ it[1]] ] }
-                                    .groupTuple(by: [0])
-                                    .map { it ->  [ it[0],
-                                                    it[1].flatten().sort().collect{ it.getName().replace("_peaks.broadPeak","") },
-                                                    it[1].flatten().sort() ] }
-                                    .into { merge_sample_macs2_merge_peaks_in_ch;
-                                            merge_sample_macs2_peakqc_in_ch }
-
-// GENERATE PLOTS FOR VARIOUS ASPECTS OF PEAKS ACROSS ALL SAMPLES
-process merge_sample_macs2_peakqc {
-
-   tag "$name"
-
-   publishDir "${params.outdir}/align/mergeSample/macs2/qc", mode: 'copy'
-
-   input:
-   set val(name), val(sampleids), file(peaks) from merge_sample_macs2_peakqc_in_ch
-
-   output:
-   file ("*.{txt,pdf}") into merge_sample_macs2_peakqc_ch
-
-   script:
-       """
-       Rscript $baseDir/bin/plot_macs2_peakqc.R -i ${peaks.join(',')} -s ${sampleids.join(',')} -o ./ -p macs2_peakqc
+       Rscript $baseDir/bin/plot_macs2_peakqc.R -i ${peaks.join(',')} -s ${sampleids.join(',')} -o ./ -p macs2_peak
+       Rscript $baseDir/bin/plot_homer.R -i ${homers.join(',')} -s ${homer_sampleids.join(',')} -o ./ -p ${homer_name}
+       Rscript $baseDir/bin/plot_frip.R -i ${frips.join(',')} -s ${frip_sampleids.join(',')} -o ./ -p ${frip_name}
        """
 }
 
@@ -1669,6 +1644,9 @@ process merge_sample_macs2_merge_peaks {
    set val(name), file("*.bed") into merge_sample_macs2_merge_peaks_bed_ch
    set val(name), file("*.saf") into merge_sample_macs2_merge_peaks_saf_ch
    set val(name), file("*.intersect.txt") into merge_sample_macs2_merge_peaks_intersect_ch
+
+   when:
+   replicates_exist
 
    script:
        """
@@ -1694,6 +1672,9 @@ process merge_sample_macs2_merge_peaks_intersect_plot {
    output:
    set val(name), file("*.pdf") into merge_sample_macs2_merge_peaks_intersect_plot_ch
 
+   when:
+   replicates_exist
+
    script:
        """
        Rscript $baseDir/bin/plot_peak_intersect.R -i ${intersect} -o ${name}.boolean.intersect.plot.pdf
@@ -1716,6 +1697,9 @@ process merge_sample_macs2_merge_peaks_homer {
     output:
     set val(name), file("*.annotatePeaks.txt") into merge_sample_macs2_merge_peaks_homer_ch
     set val(name), file("*.annotatePeaks.sysout") into merge_sample_macs2_merge_peaks_homer_sysout_ch
+
+    when:
+    replicates_exist
 
     script:
         """
@@ -1753,6 +1737,9 @@ process merge_sample_macs2_merge_peaks_featurecounts {
     set val(name), file("*.featureCounts.txt") into merge_sample_macs2_merge_peaks_featurecounts_ch
     set val(name), file("*.featureCounts.sysout") into merge_sample_macs2_merge_peaks_featurecounts_sysout_ch
 
+    when:
+    replicates_exist
+
     script:
         """
         featureCounts -F SAF \\
@@ -1785,6 +1772,9 @@ process merge_sample_macs2_merge_peaks_differential {
     set val(name), file("deseq2/*") into merge_sample_macs2_merge_peaks_differential_ch
     file "*.txt" into merge_sample_macs2_merge_peaks_differential_complete_ch
 
+    when:
+    replicates_exist
+
     script:
         """
         Rscript $baseDir/bin/featurecounts_deseq2.R -i ${counts} -b '.mRp.rmD.bam' -o ./deseq2 -p ${name}
@@ -1800,42 +1790,71 @@ process merge_sample_macs2_merge_peaks_differential {
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-// MERGE CHANNELS FOR REPLICATE AND SAMPLE LEVEL FILES TO AVOID RUNNING PROCESS PER SAMPLE
+// MERGE CHANNELS FOR REPLICATE LEVEL BIGWIG FILES
 merge_replicate_bigwig_ch.map { it -> [ 'bigwig', it[1] ] }
                          .groupTuple()
                          .map { it -> it[1].sort() }
                          .set { merge_replicate_bigwig_ch }
 
-merge_sample_bigwig_ch.map { it -> [ 'bigwig', it[1] ] }
-                      .groupTuple()
-                      .map { it -> it[1].sort() }
-                      .set { merge_sample_bigwig_ch }
-
-// HAD TO WRITE CUSTOM SCRIPT TO REORDER TRACKS IN SESSION FILE MORE SENSIBLY.
+// CUSTOM SCRIPT TO REORDER TRACKS IN IGV SESSION FILE MORE SENSIBLY.
 // PROBABLY POSSIBLE WITH NEXTFLOW BUT MUCH EASIER IN PYTHON!
-process igv_session {
+if (replicates_exist) {
 
-    tag "igv_session"
+    // MERGE CHANNELS FOR SAMPLE LEVEL BIGWIG FILES
+    merge_sample_bigwig_ch.map { it -> [ 'bigwig', it[1] ] }
+                          .groupTuple()
+                          .map { it -> it[1].sort() }
+                          .set { merge_sample_bigwig_ch }
 
-    publishDir "${params.outdir}/igv", mode: 'copy'
+    process igv_session {
 
-    input:
-    file bigwigs from merge_replicate_bigwig_ch.merge(merge_sample_bigwig_ch)
-    file fasta from fasta_igv_ch.collect()
-    file gtf from gtf_igv_ch.collect()
-    file replicate_diff from merge_replicate_macs2_merge_peaks_differential_complete_ch.collect()
-    file sample_diff from merge_sample_macs2_merge_peaks_differential_complete_ch.collect()
+        tag "igv_session"
 
-    output:
-    file "*.{xml,txt}" into igv_session_ch
+        publishDir "${params.outdir}/igv", mode: 'copy'
 
-    script:
-        """
-        [ ! -f ${params.outdir_abspath}/genome/${fasta.getName()} ] && ln -s ${params.fasta} ${params.outdir_abspath}/genome/${fasta.getName()}
-        [ ! -f ${params.outdir_abspath}/genome/${gtf.getName()} ] && ln -s ${params.gtf} ${params.outdir_abspath}/genome/${gtf.getName()}
-        python $baseDir/bin/igv_get_files.py ${params.outdir_abspath} igv_files.txt
-        python $baseDir/bin/igv_files_to_session.py igv_session.xml igv_files.txt ${params.outdir_abspath}/genome/${fasta.getName()}
-        """
+        input:
+        file bigwigs from merge_replicate_bigwig_ch.merge(merge_sample_bigwig_ch)
+        file fasta from fasta_igv_ch.collect()
+        file gtf from gtf_igv_ch.collect()
+        file replicate_diff from merge_replicate_macs2_merge_peaks_differential_complete_ch.collect()
+        file sample_diff from merge_sample_macs2_merge_peaks_differential_complete_ch.collect()
+
+        output:
+        file "*.{xml,txt}" into igv_session_ch
+
+        script:
+            """
+            [ ! -f ${params.outdir_abspath}/genome/${fasta.getName()} ] && ln -s ${params.fasta} ${params.outdir_abspath}/genome/${fasta.getName()}
+            [ ! -f ${params.outdir_abspath}/genome/${gtf.getName()} ] && ln -s ${params.gtf} ${params.outdir_abspath}/genome/${gtf.getName()}
+            python $baseDir/bin/igv_get_files.py ${params.outdir_abspath} igv_files.txt
+            python $baseDir/bin/igv_files_to_session.py igv_session.xml igv_files.txt ${params.outdir_abspath}/genome/${fasta.getName()}
+            """
+    }
+} else {
+
+    process igv_session {
+
+        tag "igv_session"
+
+        publishDir "${params.outdir}/igv", mode: 'copy'
+
+        input:
+        file bigwigs from merge_replicate_bigwig_ch
+        file fasta from fasta_igv_ch.collect()
+        file gtf from gtf_igv_ch.collect()
+        file replicate_diff from merge_replicate_macs2_merge_peaks_differential_complete_ch.collect()
+
+        output:
+        file "*.{xml,txt}" into igv_session_ch
+
+        script:
+            """
+            [ ! -f ${params.outdir_abspath}/genome/${fasta.getName()} ] && ln -s ${params.fasta} ${params.outdir_abspath}/genome/${fasta.getName()}
+            [ ! -f ${params.outdir_abspath}/genome/${gtf.getName()} ] && ln -s ${params.gtf} ${params.outdir_abspath}/genome/${gtf.getName()}
+            python $baseDir/bin/igv_get_files.py ${params.outdir_abspath} igv_files.txt
+            python $baseDir/bin/igv_files_to_session.py igv_session.xml igv_files.txt ${params.outdir_abspath}/genome/${fasta.getName()}
+            """
+      }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
