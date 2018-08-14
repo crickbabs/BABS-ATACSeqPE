@@ -170,7 +170,8 @@ if( params.design && file(params.design).exists() ){
                        row.run,
                        file(row.fastq_1),
                        file(row.fastq_2) ] }
-      .into { design_replicate_exist_ch;
+      .into { design_replicates_exist_ch;
+              design_multiple_samples_ch;
               design_raw_fastqc_ch;
               design_raw_fastqscreen_ch;
               design_cutadapt_ch }
@@ -238,11 +239,20 @@ try {
 ///////////////////////////////////////////////////////////////////////////////
 
 // BOOLEAN VALUE FOR REPLICATES EXISTING IN DESIGN
-replicates_exist = design_replicate_exist_ch.map { it -> [ it[2].toInteger() ] }
-                                            .flatten()
-                                            .max()
-                                            .map { it -> it > 1 }
-                                            .val
+replicates_exist = design_replicates_exist_ch.map { it -> it[2].toInteger() }
+                                             .flatten()
+                                             .max()
+                                             .val > 1
+
+// BOOLEAN VALUE FOR MULTIPLE SAMPLES EXISTING IN DESIGN
+multiple_samples = design_multiple_samples_ch.map { it -> it[1] }
+                                             .flatten()
+                                             .unique()
+                                             .count()
+                                             .val > 1
+
+println(multiple_samples)
+println(replicates_exist)
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -988,7 +998,8 @@ process merge_replicate_macs2 {
     output:
     set val(sampleid), file("*/*.broadPeak") into merge_replicate_macs2_homer_in_ch,
                                                   merge_replicate_macs2_frip_in_ch,
-                                                  merge_replicate_macs2_merge_peaks_in_ch
+                                                  merge_replicate_macs2_merge_peaks_in_ch,
+                                                  merge_replicate_macs2_igv_in_ch
     set val(sampleid), file("*/*.{gappedPeak,xls}") into merge_replicate_macs2_output_ch
     set val(sampleid), file("*/*/*.sysout") into merge_replicate_macs2_sysout_ch
 
@@ -1122,6 +1133,9 @@ process merge_replicate_macs2_merge_peaks {
    set val(name), file("*.saf") into merge_replicate_macs2_merge_peaks_saf_ch
    set val(name), file("*.intersect.txt") into merge_replicate_macs2_merge_peaks_intersect_ch
 
+   when:
+   multiple_samples
+
    script:
        """
        sort -k1,1 -k2,2n ${peaks.join(' ')} \\
@@ -1145,6 +1159,9 @@ process merge_replicate_macs2_merge_peaks_intersect_plot {
 
    output:
    set val(name), file("*.pdf") into merge_replicate_macs2_merge_peaks_intersect_plot_ch
+
+   when:
+   multiple_samples
 
    script:
        """
@@ -1172,6 +1189,9 @@ process merge_replicate_macs2_merge_peaks_homer {
     output:
     set val(name), file("*.annotatePeaks.txt") into merge_replicate_macs2_merge_peaks_homer_ch
     set val(name), file("*.annotatePeaks.sysout") into merge_replicate_macs2_merge_peaks_homer_sysout_ch
+
+    when:
+    multiple_samples
 
     script:
         """
@@ -1216,6 +1236,9 @@ process merge_replicate_macs2_merge_peaks_featurecounts {
     set val(name), file("*.summary") into merge_replicate_macs2_merge_peaks_featurecounts_summary_ch
     set val(name), file("*.sysout") into merge_replicate_macs2_merge_peaks_featurecounts_sysout_ch
 
+    when:
+    multiple_samples
+
     script:
         """
         featureCounts -F SAF \\
@@ -1246,12 +1269,15 @@ process merge_replicate_macs2_merge_peaks_differential {
 
     output:
     set val(name), file("deseq2/*") into merge_replicate_macs2_merge_peaks_differential_ch
-    file "deseq2/complete.txt" into merge_replicate_macs2_merge_peaks_differential_complete_ch
+    set val(name), file("deseq2/*complete.txt") into merge_replicate_macs2_merge_peaks_differential_complete_ch
+
+    when:
+    multiple_samples
 
     script:
         """
         Rscript $baseDir/bin/featurecounts_deseq2.R -i ${counts} -b '.RpL.rmD.bam' -o ./deseq2 -p ${name}
-        touch ./deseq2/complete.txt
+        touch ./deseq2/replicate_complete.txt
         """
 }
 
@@ -1510,7 +1536,8 @@ process merge_sample_macs2 {
     output:
     set val(sampleid), file("*/*.broadPeak") into merge_sample_macs2_homer_in_ch,
                                                   merge_sample_macs2_frip_in_ch,
-                                                  merge_sample_macs2_merge_peaks_in_ch
+                                                  merge_sample_macs2_merge_peaks_in_ch,
+                                                  merge_sample_macs2_igv_in_ch
     set val(sampleid), file("*/*.{gappedPeak,xls}") into merge_sample_macs2_output_ch
     set val(sampleid), file("*/*/*.sysout") into merge_sample_macs2_sysout_ch
 
@@ -1656,7 +1683,7 @@ process merge_sample_macs2_merge_peaks {
    set val(name), file("*.intersect.txt") into merge_sample_macs2_merge_peaks_intersect_ch
 
    when:
-   replicates_exist
+   multiple_samples && replicates_exist
 
    script:
        """
@@ -1683,7 +1710,7 @@ process merge_sample_macs2_merge_peaks_intersect_plot {
    set val(name), file("*.pdf") into merge_sample_macs2_merge_peaks_intersect_plot_ch
 
    when:
-   replicates_exist
+   multiple_samples && replicates_exist
 
    script:
        """
@@ -1713,7 +1740,7 @@ process merge_sample_macs2_merge_peaks_homer {
     set val(name), file("*.annotatePeaks.sysout") into merge_sample_macs2_merge_peaks_homer_sysout_ch
 
     when:
-    replicates_exist
+    multiple_samples && replicates_exist
 
     script:
         """
@@ -1757,6 +1784,9 @@ process merge_sample_macs2_merge_peaks_featurecounts {
     set val(name), file("*.summary") into merge_sample_macs2_merge_peaks_featurecounts_summary_ch
     set val(name), file("*.sysout") into merge_sample_macs2_merge_peaks_featurecounts_sysout_ch
 
+    when:
+    multiple_samples && replicates_exist
+
     script:
         """
         featureCounts -F SAF \\
@@ -1787,15 +1817,15 @@ process merge_sample_macs2_merge_peaks_differential {
 
     output:
     set val(name), file("deseq2/*") into merge_sample_macs2_merge_peaks_differential_ch
-    file "deseq2/complete.txt" into merge_sample_macs2_merge_peaks_differential_complete_ch
+    set val(name), file("deseq2/*complete.txt") into merge_sample_macs2_merge_peaks_differential_complete_ch
 
     when:
-    replicates_exist
+    multiple_samples && replicates_exist
 
     script:
         """
         Rscript $baseDir/bin/featurecounts_deseq2.R -i ${counts} -b '.RpL.rmD.bam' -o ./deseq2 -p ${name}
-        touch ./deseq2/complete.txt
+        touch ./deseq2/sample_complete.txt
         """
 }
 
@@ -1807,26 +1837,49 @@ process merge_sample_macs2_merge_peaks_differential {
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-// MERGE CHANNELS FOR REPLICATE LEVEL BIGWIG FILES
-merge_replicate_bigwig_ch.map { it -> [ 'bigwig', it[1] ] }
-                         .groupTuple()
-                         .map { it -> it[1].sort() }
-                         .set { merge_replicate_bigwig_ch }
+// COLLATE BIGWIG FILES FOR IGV
+merge_replicate_bigwig_ch.map { it -> it[1] }
+                         .set { igv_input_ch }
+merge_sample_bigwig_ch.map { it -> it[1] }
+                      .set { merge_sample_bigwig_ch }
 
-if (replicates_exist) {
+// COLLATE MACS2 PEAK FILES FOR IGV
+merge_replicate_macs2_igv_in_ch.map { it -> it[1] }
+                               .set { merge_replicate_macs2_igv_in_ch }
+merge_sample_macs2_igv_in_ch.map { it -> it[1] }
+                            .set { merge_sample_macs2_igv_in_ch }
 
-    // MERGE CHANNELS FOR SAMPLE LEVEL BIGWIG FILES
-    merge_sample_bigwig_ch.map { it -> [ 'bigwig', it[1] ] }
-                          .groupTuple()
-                          .map { it -> it[1].sort() }
-                          .set { merge_sample_bigwig_ch }
+// COLLATE DIFFERENTIAL ANALYSIS FILES FOR IGV
+merge_replicate_macs2_merge_peaks_differential_complete_ch.map { it -> it[1] }
+                                                          .set { merge_replicate_macs2_merge_peaks_differential_complete_ch }
+merge_sample_macs2_merge_peaks_differential_complete_ch.map { it -> it[1] }
+                                                       .set { merge_sample_macs2_merge_peaks_differential_complete_ch }
 
-    merge_replicate_bigwig_ch.merge(merge_sample_bigwig_ch)
-                             .set{ merge_replicate_bigwig_ch }
+if (replicates_exist && multiple_samples) {
 
-    merge_replicate_macs2_merge_peaks_differential_complete_ch.merge(merge_sample_macs2_merge_peaks_differential_complete_ch)
-                                                              .map { it -> it[0] }
-                                                              .set { merge_replicate_macs2_merge_peaks_differential_complete_ch }
+    igv_input_ch.merge(merge_sample_bigwig_ch)
+                .merge(merge_replicate_macs2_igv_in_ch)
+                .merge(merge_sample_macs2_igv_in_ch)
+                .merge(merge_replicate_macs2_merge_peaks_differential_complete_ch)
+                .merge(merge_sample_macs2_merge_peaks_differential_complete_ch)
+                .set { igv_input_ch }
+
+} else if (replicates_exist && !multiple_samples) {
+
+    igv_input_ch.merge(merge_sample_bigwig_ch)
+                .merge(merge_replicate_macs2_igv_in_ch)
+                .merge(merge_sample_macs2_igv_in_ch)
+                .set { igv_input_ch }
+
+} else if (!replicates_exist && multiple_samples) {
+
+    igv_input_ch.merge(merge_replicate_macs2_igv_in_ch)
+                .set { igv_input_ch }
+
+} else if (!replicates_exist && !multiple_samples) {
+
+    igv_input_ch.merge(merge_replicate_macs2_igv_in_ch)
+                .set { igv_input_ch }
 
 }
 
@@ -1839,10 +1892,9 @@ process igv_session {
     publishDir "${params.outdir}/igv", mode: 'copy'
 
     input:
-    file bigwigs from merge_replicate_bigwig_ch
+    file igvs from igv_input_ch
     file fasta from fasta_igv_ch.collect()
     file gtf from gtf_igv_ch.collect()
-    file replicate_diff from merge_replicate_macs2_merge_peaks_differential_complete_ch.collect()
 
     output:
     file "*.{xml,txt}" into igv_session_ch
