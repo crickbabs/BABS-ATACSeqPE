@@ -23,11 +23,18 @@ Depending on where and how you would like to run the pipeline, Nextflow needs to
 
 This is the easiest, most hassle-free and portable way of running the pipeline. A custom [Conda environment file](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/environment.yaml) is provided with the pipeline for those that wish to run the pipeline on another system without having to painstakingly install all of the software and associated dependencies. This will require an internet connection on the command-line, and installation of [Anaconda or Miniconda](https://conda.io/docs/user-guide/install/index.html). Nextflow will rather amazingly create a temporary Conda environment by downloading and installing all of the required software before execution of the pipeline. **NOTE: This could take up to 45 minutes.**  
 
-It is also possible to create a permanent copy of the Conda environment for recurrent use and Nextflow can be configured accordingly, however this wont be outlined here.
+A [Conda config file](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/conf/conda.config) can be found in the `conf/` directory. By default, the pipeline will be executed using the `slurm` job submission system. You will need an account to use the HPC cluster on CAMP if you want to run this at The Francis Crick Institute. If you prefer to run the pipeline locally in serial just replace `executor = 'slurm'` to `executor = 'local'` in the Conda config file. However, the pipeline may take a very long time to complete and this is only recommended for testing purposes. By default, Conda will download and compile the packages for the environment in the user `HOME` directory, however, this has a space limitation of 5GB on CAMP which wont be large enough. To overcome this, you can create a file called `.condarc` in your `HOME` directory that instructs Conda to install the environment and associated packages in your `working` directory. Just copy the text below, place it in the `.condarc` file, and change the paths to reflect those that are most appropriate for you.
 
-A [Conda config file](https://github.com/crickbabs/BABS-ATACSeqPE/blob/master/conf/conda.config) can be found in the `conf/` directory. By default, the pipeline will be executed using the `slurm` job submission system. You will need an account to use the HPC cluster on CAMP if you want to run this at The Francis Crick Institute. If you prefer to run the pipeline locally in serial just replace `executor = 'slurm'` to `executor = 'local'` in the Conda config file. However, the pipeline may take a very long time to complete and this is only recommended for testing purposes.  
+```bash
+envs_dirs:
+  - /camp/stp/babs/working/patelh/code/conda/envs/
+pkgs_dirs:
+  - /camp/stp/babs/working/patelh/code/conda/pkgs/
+```
 
 Before the submission of each Nextflow process the `conda` command will need to be available on the command-line to activate the Conda environment. If you are not running the pipeline at The Francis Crick Institute you will need to edit `beforeScript = 'module purge && ml Anaconda2/5.1.0'` in the config file to load/use Conda.
+
+It is also possible to create a permanent copy of the Conda environment for recurrent use and Nextflow can be configured accordingly, however this wont be outlined here.
 
 **When running the pipeline just specify `-profile conda` in order to use this configuration.**
 
