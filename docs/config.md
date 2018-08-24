@@ -29,9 +29,9 @@ By default, Conda will download and compile the packages for the environment in 
 
 ```bash
 envs_dirs:
-  - /camp/stp/babs/working/patelh/code/conda/envs/
+  - /camp/stp/babs/working/patelh/conda/envs/
 pkgs_dirs:
-  - /camp/stp/babs/working/patelh/code/conda/pkgs/
+  - /camp/stp/babs/working/patelh/conda/pkgs/
 ```
 
 It is also possible to create a permanent copy of the Conda environment for recurrent use and Nextflow can be configured accordingly, however this wont be outlined here.
