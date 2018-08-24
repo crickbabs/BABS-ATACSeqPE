@@ -10,7 +10,7 @@ cd BABS-ATACSeqPE
 # source ./conf/babs_modules_path.sh
 # ml purge
 
-#### (4) Load Nextflow (Uncomment if running at The Francis Crick Institute or change as required to run on your system)
+#### (4) Load Nextflow (Uncomment if running at The Francis Crick Institute or change as required on your system)
 # ml nextflow/0.30.2
 
 #### (5) Customise 'conf/genomes.config' to specify custom paths to genomes
@@ -19,12 +19,19 @@ cd BABS-ATACSeqPE
 
 ###########################################
 
-#### (7) Run pipeline with software specified in 'conf/babs_modules.config' via SLURM (Uncomment if running at The Francis Crick Institute)
-# nextflow run main.nf --design ../design.csv --genome hg19 -profile babs_modules --outdir ../results/
+#### (7) Run pipeline with Conda using software specified in 'environment.yaml' via SLURM.
+
+#### (7.1) Create '.condarc' file if running at The Francis Crick Institute (see 'docs/config.md')
+
+#### (7.2) Load Conda (Uncomment if running at The Francis Crick Institute or change as required to run on your system)
+# ml Anaconda2/5.1.0
+
+#### (7.3) Run pipeline
+# nextflow run main.nf --design ../design.csv --genome hg19 -profile conda --outdir ../results/
 
 ################# OR ######################
 
-#### (7) Run pipeline with Conda using software specified in 'environment.yaml' via SLURM. Need to load Conda first.
-# ml Anaconda2/5.1.0			## Uncomment if running at The Francis Crick Institute or change as required to run on your system
-# nextflow run main.nf --design ../design.csv --genome hg19 -profile conda --outdir ../results/
+#### (7) Run pipeline with software specified in 'conf/babs_modules.config' via SLURM (Uncomment if running at The Francis Crick Institute)
+# nextflow run main.nf --design ../design.csv --genome hg19 -profile babs_modules --outdir ../results/
 
+###########################################
