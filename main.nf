@@ -251,9 +251,6 @@ multiple_samples = design_multiple_samples_ch.map { it -> it[1] }
                                              .count()
                                              .val > 1
 
-println(multiple_samples)
-println(replicates_exist)
-
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 /* --                                                                     -- */
@@ -505,7 +502,7 @@ process bwa_sampe {
 
     tag "$sampleid"
 
-    label "lowcpu"
+    label "sampe"
 
     publishDir "${params.outdir}/align", mode: 'copy',
                 saveAs: {filename ->
@@ -1837,48 +1834,34 @@ process merge_sample_macs2_merge_peaks_differential {
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-// COLLATE BIGWIG FILES FOR IGV
+// COLLATE FILES FOR IGV
 merge_replicate_bigwig_ch.map { it -> it[1] }
                          .set { igv_input_ch }
-merge_sample_bigwig_ch.map { it -> it[1] }
-                      .set { merge_sample_bigwig_ch }
-
-// COLLATE MACS2 PEAK FILES FOR IGV
-merge_replicate_macs2_igv_in_ch.map { it -> it[1] }
-                               .set { merge_replicate_macs2_igv_in_ch }
-merge_sample_macs2_igv_in_ch.map { it -> it[1] }
-                            .set { merge_sample_macs2_igv_in_ch }
-
-// COLLATE DIFFERENTIAL ANALYSIS FILES FOR IGV
-merge_replicate_macs2_merge_peaks_differential_complete_ch.map { it -> it[1] }
-                                                          .set { merge_replicate_macs2_merge_peaks_differential_complete_ch }
-merge_sample_macs2_merge_peaks_differential_complete_ch.map { it -> it[1] }
-                                                       .set { merge_sample_macs2_merge_peaks_differential_complete_ch }
 
 if (replicates_exist && multiple_samples) {
 
-    igv_input_ch.merge(merge_sample_bigwig_ch)
-                .merge(merge_replicate_macs2_igv_in_ch)
-                .merge(merge_sample_macs2_igv_in_ch)
-                .merge(merge_replicate_macs2_merge_peaks_differential_complete_ch)
-                .merge(merge_sample_macs2_merge_peaks_differential_complete_ch)
+    igv_input_ch.merge(merge_sample_bigwig_ch.map { it -> it[1] },
+                       merge_replicate_macs2_igv_in_ch.map { it -> it[1] },
+                       merge_sample_macs2_igv_in_ch.map { it -> it[1] },
+                       merge_replicate_macs2_merge_peaks_differential_complete_ch.map { it -> it[1] },
+                       merge_sample_macs2_merge_peaks_differential_complete_ch.map { it -> it[1] })
                 .set { igv_input_ch }
 
 } else if (replicates_exist && !multiple_samples) {
 
-    igv_input_ch.merge(merge_sample_bigwig_ch)
-                .merge(merge_replicate_macs2_igv_in_ch)
-                .merge(merge_sample_macs2_igv_in_ch)
+    igv_input_ch.merge(merge_sample_bigwig_ch.map { it -> it[1] },
+                       merge_replicate_macs2_igv_in_ch.map { it -> it[1] },
+                       merge_sample_macs2_igv_in_ch.map { it -> it[1] })
                 .set { igv_input_ch }
 
 } else if (!replicates_exist && multiple_samples) {
 
-    igv_input_ch.merge(merge_replicate_macs2_igv_in_ch)
+    igv_input_ch.merge(merge_replicate_macs2_igv_in_ch.map { it -> it[1] })
                 .set { igv_input_ch }
 
 } else if (!replicates_exist && !multiple_samples) {
 
-    igv_input_ch.merge(merge_replicate_macs2_igv_in_ch)
+    igv_input_ch.merge(merge_replicate_macs2_igv_in_ch.map { it -> it[1] })
                 .set { igv_input_ch }
 
 }
