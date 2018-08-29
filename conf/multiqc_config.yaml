@@ -55,3 +55,4 @@ module_order:
         info: 'This section of the report shows SAMTools results at the sample-level after removal of duplicate reads.'
         path_filters:
             - '*SmL.rmD*'
+
