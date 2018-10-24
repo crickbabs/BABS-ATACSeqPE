@@ -264,8 +264,6 @@ multiple_samples = design_multiple_samples_ch.map { it -> it[1] }
 // CREATE BED FILE WITHOUT MASKED REGIONS & MITOCHONDRIAL CONTIG FOR SAMTOOLS FILTERING
 process prep_genome {
 
-    tag "$fasta"
-
     publishDir "${params.outdir}/genome", mode: 'copy'
 
     input:
@@ -284,7 +282,7 @@ process prep_genome {
             """
             samtools faidx ${fasta}
             cut -f 1,2 ${fasta}.fai > ${fasta}.sizes
-            complementBed -i ${params.genome_mask} -g ${fasta}.sizes > ${fasta}.bed
+            sortBed -i ${params.genome_mask} -g ${fasta}.sizes | complementBed -i stdin -g ${fasta}.sizes > ${fasta}.bed
             awk '\$1 != "${params.mito_name}"' ${fasta}.bed > ${fasta}.include_regions.bed
             """
         } else {
@@ -695,7 +693,7 @@ process rm_orphan {
     script:
         out_prefix="${sampleid}.clN"
         """
-        python $baseDir/bin/bampe_rm_orphan.py ${bam} ${out_prefix}.bam --only_prop_pair
+        python bampe_rm_orphan.py ${bam} ${out_prefix}.bam --only_prop_pair
         """
 }
 
@@ -1108,9 +1106,9 @@ process merge_replicate_macs2_qc {
 
    script:
        """
-       Rscript $baseDir/bin/plot_macs2_peakqc.R -i ${peaks.join(',')} -s ${sampleids.join(',')} -o ./ -p macs2_peak
-       Rscript $baseDir/bin/plot_homer.R -i ${homers.join(',')} -s ${homer_sampleids.join(',')} -o ./ -p ${homer_name}
-       Rscript $baseDir/bin/plot_frip.R -i ${frips.join(',')} -s ${frip_sampleids.join(',')} -o ./ -p ${frip_name}
+       Rscript plot_macs2_peakqc.R -i ${peaks.join(',')} -s ${sampleids.join(',')} -o ./ -p macs2_peak
+       Rscript plot_homer.R -i ${homers.join(',')} -s ${homer_sampleids.join(',')} -o ./ -p ${homer_name}
+       Rscript plot_frip.R -i ${frips.join(',')} -s ${frip_sampleids.join(',')} -o ./ -p ${frip_name}
        """
 }
 
@@ -1137,7 +1135,7 @@ process merge_replicate_macs2_merge_peaks {
        """
        sort -k1,1 -k2,2n ${peaks.join(' ')} \\
             | mergeBed -c 2,3,4,5,6,7,8,9 -o collapse,collapse,collapse,collapse,collapse,collapse,collapse,collapse > ${name}.txt
-       python $baseDir/bin/macs2_merged_expand.py ${name}.txt ${sampleids.join(',')} ${name}.boolean.txt --min_samples 1
+       python macs2_merged_expand.py ${name}.txt ${sampleids.join(',')} ${name}.boolean.txt --min_samples 1
        awk -v FS='\t' -v OFS='\t' 'FNR > 1 { print \$1, \$2, \$3, \$4, "0", "+" }' ${name}.boolean.txt > ${name}.bed
        echo -e "GeneID\tChr\tStart\tEnd\tStrand" > ${name}.saf
        awk -v FS='\t' -v OFS='\t' 'FNR > 1 { print \$4, \$1, \$2, \$3,  "+" }' ${name}.boolean.txt >> ${name}.saf
@@ -1162,7 +1160,7 @@ process merge_replicate_macs2_merge_peaks_intersect_plot {
 
    script:
        """
-       Rscript $baseDir/bin/plot_peak_intersect.R -i ${intersect} -o ${name}.boolean.intersect.plot.pdf
+       Rscript plot_peak_intersect.R -i ${intersect} -o ${name}.boolean.intersect.plot.pdf
        """
 }
 
@@ -1273,7 +1271,7 @@ process merge_replicate_macs2_merge_peaks_differential {
 
     script:
         """
-        Rscript $baseDir/bin/featurecounts_deseq2.R -i ${counts} -b '.RpL.rmD.bam' -o ./deseq2 -p ${name}
+        Rscript featurecounts_deseq2.R -i ${counts} -b '.RpL.rmD.bam' -o ./deseq2 -p ${name}
         touch ./deseq2/replicate_complete.txt
         """
 }
@@ -1657,9 +1655,9 @@ process merge_sample_macs2_qc {
 
    script:
        """
-       Rscript $baseDir/bin/plot_macs2_peakqc.R -i ${peaks.join(',')} -s ${sampleids.join(',')} -o ./ -p macs2_peak
-       Rscript $baseDir/bin/plot_homer.R -i ${homers.join(',')} -s ${homer_sampleids.join(',')} -o ./ -p ${homer_name}
-       Rscript $baseDir/bin/plot_frip.R -i ${frips.join(',')} -s ${frip_sampleids.join(',')} -o ./ -p ${frip_name}
+       Rscript plot_macs2_peakqc.R -i ${peaks.join(',')} -s ${sampleids.join(',')} -o ./ -p macs2_peak
+       Rscript plot_homer.R -i ${homers.join(',')} -s ${homer_sampleids.join(',')} -o ./ -p ${homer_name}
+       Rscript plot_frip.R -i ${frips.join(',')} -s ${frip_sampleids.join(',')} -o ./ -p ${frip_name}
        """
 }
 
@@ -1686,7 +1684,7 @@ process merge_sample_macs2_merge_peaks {
        """
        sort -k1,1 -k2,2n ${peaks.join(' ')} \\
             | mergeBed -c 2,3,4,5,6,7,8,9 -o collapse,collapse,collapse,collapse,collapse,collapse,collapse,collapse > ${name}.txt
-       python $baseDir/bin/macs2_merged_expand.py ${name}.txt ${sampleids.join(',')} ${name}.boolean.txt --min_samples 1
+       python macs2_merged_expand.py ${name}.txt ${sampleids.join(',')} ${name}.boolean.txt --min_samples 1
        awk -v FS='\t' -v OFS='\t' 'FNR > 1 { print \$1, \$2, \$3, \$4, "0", "+" }' ${name}.boolean.txt > ${name}.bed
        echo -e "GeneID\tChr\tStart\tEnd\tStrand" > ${name}.saf
        awk -v FS='\t' -v OFS='\t' 'FNR > 1 { print \$4, \$1, \$2, \$3,  "+" }' ${name}.boolean.txt >> ${name}.saf
@@ -1711,7 +1709,7 @@ process merge_sample_macs2_merge_peaks_intersect_plot {
 
    script:
        """
-       Rscript $baseDir/bin/plot_peak_intersect.R -i ${intersect} -o ${name}.boolean.intersect.plot.pdf
+       Rscript plot_peak_intersect.R -i ${intersect} -o ${name}.boolean.intersect.plot.pdf
        """
 }
 
@@ -1821,7 +1819,7 @@ process merge_sample_macs2_merge_peaks_differential {
 
     script:
         """
-        Rscript $baseDir/bin/featurecounts_deseq2.R -i ${counts} -b '.RpL.rmD.bam' -o ./deseq2 -p ${name}
+        Rscript featurecounts_deseq2.R -i ${counts} -b '.RpL.rmD.bam' -o ./deseq2 -p ${name}
         touch ./deseq2/sample_complete.txt
         """
 }
@@ -1870,8 +1868,6 @@ if (replicates_exist && multiple_samples) {
 // PROBABLY POSSIBLE WITH NEXTFLOW BUT MUCH EASIER IN PYTHON!
 process igv_session {
 
-    tag "igv_session"
-
     publishDir "${params.outdir}/igv", mode: 'copy'
 
     input:
@@ -1886,8 +1882,8 @@ process igv_session {
         """
         [ ! -f ${params.outdir_abspath}/genome/${fasta.getName()} ] && ln -s ${params.fasta} ${params.outdir_abspath}/genome/${fasta.getName()}
         [ ! -f ${params.outdir_abspath}/genome/${gtf.getName()} ] && ln -s ${params.gtf} ${params.outdir_abspath}/genome/${gtf.getName()}
-        python $baseDir/bin/igv_get_files.py ${params.outdir_abspath} igv_files.txt
-        python $baseDir/bin/igv_files_to_session.py igv_session.xml igv_files.txt ${params.outdir_abspath}/genome/${fasta.getName()}
+        python igv_get_files.py ${params.outdir_abspath} igv_files.txt
+        python igv_files_to_session.py igv_session.xml igv_files.txt ${params.outdir_abspath}/genome/${fasta.getName()}
         """
 }
 
@@ -1901,8 +1897,6 @@ process igv_session {
 
 // RUN THIS AFTER IGV BECAUSE ITS AT THE END OF THE PIPELINE
 process multiqc {
-
-    tag "multiqc"
 
     publishDir "${params.outdir}/qc/multiqc", mode: 'copy'
 
@@ -1937,8 +1931,6 @@ process multiqc {
 // RUN THIS AFTER MULTIQC BECAUSE ITS AT THE END OF THE PIPELINE
 process qc_to_tsv {
 
-    tag "qc_to_tsv"
-
     publishDir "${params.outdir}/qc", mode: 'copy'
 
     input:
@@ -1949,7 +1941,7 @@ process qc_to_tsv {
 
     script:
         """
-        python $baseDir/bin/pipeline_qc_to_tsv.py ${params.outdir_abspath} BABS-ATACSeqPE_pipeline_qc.tsv ${params.mito_name}
+        python pipeline_qc_to_tsv.py ${params.outdir_abspath} BABS-ATACSeqPE_pipeline_qc.tsv ${params.mito_name}
         """
 }
 
